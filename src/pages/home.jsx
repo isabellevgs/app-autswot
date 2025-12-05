@@ -6,19 +6,54 @@ function Home() {
 
   return (
     <PageContainer>
-      <PageTitle>QUESTIONÁRIO</PageTitle>
+      <PageTitle>Seja bem-vindo(a) à AutSWOT</PageTitle>
       
       <PageContent>
         <ContentCard>
-          <p className="text-gray-800 font-medium text-base sm:text-lg leading-relaxed text-center">
-            Este questionário foi criado como parte do projeto de conclusão de curso 
-            da Priscilla e pretende ajudar adultos no espectro autista a identificar e compreender os seus traços de forma melhor. 
-            O objetivo é que seja possível reconhecer suas características únicas para as trabalhar ou as potencializar. 
-            O formulário tem 155 etapas; em algumas delas (da 50 à 94, as que mencionam "hotlink") você pode passar o mouse sobre 
-            o conteúdo da etapa para ver mais detalhes e definições. Responda cada etapa imaginando-se na situação descrita.
-            <br /><br />
-            Quando se sentir pronto(a), clique em "Próximo" para começar a sua jornada de autoconhecimento. 
+          <p className="text-gray-800 font-medium text-base sm:text-lg leading-relaxed">
+            Esta plataforma faz parte da pesquisa “AutSWOT: uma tecnologia assistiva para
+            aprendizagem e autonomia de adultos autistas”.
           </p>
+          <br/>
+          <p className="text-gray-800 font-medium text-base sm:text-lg leading-relaxed">
+            A AutSWOT foi desenhada para ajudar adultos autistas a reconhecer seus traços
+            autísticos, identificar necessidades específicas e elaborar estratégias de enfrentamento.
+          </p>
+          <br/>
+          <p className="text-gray-800 font-medium text-base sm:text-lg leading-relaxed">
+            O uso da AutSWOT envolve 4 etapas:
+          </p>
+          <br/>
+          <ol className="list-decimal list-inside text-gray-800 font-medium text-base sm:text-lg leading-relaxed space-y-2 pl-4">
+            <li>Visualização de traços autísticos por meio de histórias sociais ou escritos em
+                linguagem inclusiva, com exemplos. Para cada traço apresentado, você deverá
+                refletir se se reconhece na situação citada e, em caso positivo, deverá indicar a
+                frequência e intensidade com que esse traço se manifesta considerando os
+                diferentes âmbitos da sua vida (educacional, profissional, relações familiares, de
+                amizade e românticas).<br/>
+                O preenchimento total leva cerca de 1h30 a 2h, mas você pode avançar no seu
+                ritmo, salvar e retornar quando desejar.
+            </li>
+            <li>A exibição dos seus traços classificados em forças, fraquezas, oportunidades e
+                ameaças. 
+                <br/>
+                A classificação dos traços segue um modelo matemático e conceitual
+                desenvolvido e validado por um matemático, médicos, terapeutas, pesquisadores especializados em adultos autistas e também por adultos autistas.<br/>
+                Alguns traços aparecerão como ameaças, o que significa que impactam negativamente na sua vida e que, para superar os desafios referentes a eles, você poderá precisar de apoio externo para elaborar estratégias de enfrentamento.
+                Os traços classificados como fraquezas são aqueles que podem causar dificuldades, mas que inicialmente podem ser manejados por meio de autoconhecimento.
+                Já os traços apresentados como oportunidades são aqueles que, embora atualmente possam estar te prejudicando de alguma forma, se trabalhados têm potencial de se tornar forças autísticas.
+                Por fim, serão apresentadas suas forças autísticas: características positivas frequentemente mais acentuadas em pessoas autistas.
+                <br/><br/>
+                Os traços serão apresentados um por vez dentro do quadrante classificatório
+                (ameaças, fraquezas, oportunidades e forças). <br/>
+                Além do traço, serão mostradas
+                explicações sobre ele, dicas de estratégias de enfrentamento e perguntas
+                reflexivas que o(a) ajudarão a identificar suas necessidades específicas e
+                elaborar suas próprias estratégias de enfrentamento. Quando você terminar de 
+                responder as perguntas reflexivas dos traços de todo um quadrante, o próximo
+                quadrante será desbloqueado para que você possa continuar a atividade de reflexão e desenvolvimento de suas estratégias. Após terminar todos os quadrantes você poderá visualizar sua SWOT completa com todos os seus traços classificados.
+            </li>
+          </ol>
         </ContentCard>
       </PageContent>
 
