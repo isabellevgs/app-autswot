@@ -20,9 +20,15 @@ export function usePerguntas() {
           api.get('/forcas', { params: { page: 1, limit: 100 } })
         ]);
 
+        // Validar se as respostas têm a estrutura esperada
+        const registrosSH = responseSH?.data?.registros || [];
+        const registrosCH = responseCH?.data?.registros || [];
+        const registrosFO = responseFO?.data?.registros || [];
+        const registrosF = responseF?.data?.registros || [];
+
         // Processar perguntas CH com histórias sociais
         const perguntasCHComHistorias = await Promise.all(
-          responseCH.data.registros.map(async (registro) => {
+          registrosCH.map(async (registro) => {
             try {
               const historiaResponse = await api.get('/historias-sociais', {
                 params: {
@@ -61,7 +67,7 @@ export function usePerguntas() {
         );
 
         // Processar e ordenar todas as perguntas
-        const perguntasSH = responseSH.data.registros
+        const perguntasSH = registrosSH
           .map(registro => ({ ...registro, tipo: 'SH' }))
           .sort((a, b) => a.numeroTraco - b.numeroTraco);
 
@@ -69,7 +75,7 @@ export function usePerguntas() {
           (a, b) => a.numeroTraco - b.numeroTraco
         );
 
-        const perguntasFO = responseFO.data.registros
+        const perguntasFO = registrosFO
           .map(registro => ({
             ...registro,
             tipo: 'FO',
@@ -79,7 +85,7 @@ export function usePerguntas() {
           }))
           .sort((a, b) => a.numeroTraco - b.numeroTraco);
 
-        const perguntasF = responseF.data.registros
+        const perguntasF = registrosF
           .map(registro => ({
             ...registro,
             tipo: 'F',
@@ -101,7 +107,14 @@ export function usePerguntas() {
         setPerguntas(perguntasOrdenadas);
       } catch (err) {
         console.error('Erro ao buscar perguntas:', err);
-        setError('Erro ao carregar perguntas. Tente novamente mais tarde.');
+        console.error('Detalhes do erro:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+          url: err.config?.url
+        });
+        setError(err.response?.data?.error || err.response?.data?.message || 'Erro ao carregar perguntas. Tente novamente mais tarde.');
+        setPerguntas([]);
       } finally {
         setLoading(false);
       }
