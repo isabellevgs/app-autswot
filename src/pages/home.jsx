@@ -21,7 +21,7 @@ function Home() {
           </p>
           <br/>
           <p className="text-gray-800 font-medium text-base sm:text-lg leading-relaxed">
-            O uso da AutSWOT envolve 4 etapas:
+            O uso da AutSWOT envolve 2 etapas:
           </p>
           <br/>
           <ol className="list-decimal list-inside text-gray-800 font-medium text-base sm:text-lg leading-relaxed space-y-2 pl-4">
@@ -38,20 +38,14 @@ function Home() {
                 ameaças. 
                 <br/>
                 A classificação dos traços segue um modelo matemático e conceitual
-                desenvolvido e validado por um matemático, médicos, terapeutas, pesquisadores especializados em adultos autistas e também por adultos autistas.<br/>
+                desenvolvido e validado por um matemático, médicos, terapeutas, pesquisadores especializados em adultos autistas e também por adultos autistas.<br/><br/>
                 Alguns traços aparecerão como ameaças, o que significa que impactam negativamente na sua vida e que, para superar os desafios referentes a eles, você poderá precisar de apoio externo para elaborar estratégias de enfrentamento.
                 Os traços classificados como fraquezas são aqueles que podem causar dificuldades, mas que inicialmente podem ser manejados por meio de autoconhecimento.
                 Já os traços apresentados como oportunidades são aqueles que, embora atualmente possam estar te prejudicando de alguma forma, se trabalhados têm potencial de se tornar forças autísticas.
                 Por fim, serão apresentadas suas forças autísticas: características positivas frequentemente mais acentuadas em pessoas autistas.
                 <br/><br/>
                 Os traços serão apresentados um por vez dentro do quadrante classificatório
-                (ameaças, fraquezas, oportunidades e forças). <br/>
-                Além do traço, serão mostradas
-                explicações sobre ele, dicas de estratégias de enfrentamento e perguntas
-                reflexivas que o(a) ajudarão a identificar suas necessidades específicas e
-                elaborar suas próprias estratégias de enfrentamento. Quando você terminar de 
-                responder as perguntas reflexivas dos traços de todo um quadrante, o próximo
-                quadrante será desbloqueado para que você possa continuar a atividade de reflexão e desenvolvimento de suas estratégias. Após terminar todos os quadrantes você poderá visualizar sua SWOT completa com todos os seus traços classificados.
+                (ameaças, fraquezas, oportunidades e forças).
             </li>
           </ol>
         </ContentCard>
