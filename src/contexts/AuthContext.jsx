@@ -37,7 +37,14 @@ export const AuthProvider = ({ children }) => {
         try {
           // Busca os dados do usuário da API
           const userData = await authService.getCurrentUser();
-          setUser(userData);
+          
+          // Normalizar o role para garantir consistência
+          const normalizedUser = {
+            ...userData,
+            role: userData.role ? String(userData.role).toUpperCase() : 'USER',
+          };
+          
+          setUser(normalizedUser);
         } catch (error) {
           console.error("Erro ao carregar usuário:", error);
           // Se der erro, limpa o token inválido
@@ -56,8 +63,14 @@ export const AuthProvider = ({ children }) => {
       // Chama a API de login
       const { user, accessToken, refreshToken } = await authService.loginUser(email, password);
       
+      // Normalizar o role para garantir consistência
+      const normalizedUser = {
+        ...user,
+        role: user.role ? String(user.role).toUpperCase() : 'USER',
+      };
+      
       // Salva o usuário no estado
-      setUser(user);
+      setUser(normalizedUser);
 
       return true;
     } catch (error) {
@@ -72,8 +85,18 @@ export const AuthProvider = ({ children }) => {
       // Chama a API de registro
       const { user, accessToken, refreshToken } = await authService.registerUser(name, email, password);
       
+      // Buscar dados atualizados do usuário do servidor para garantir que o role está normalizado
+      // Isso resolve o problema de permissão após registro
+      const userData = await authService.getCurrentUser();
+      
+      // Normalizar o role para garantir consistência
+      const normalizedUser = {
+        ...userData,
+        role: userData.role ? String(userData.role).toUpperCase() : 'USER',
+      };
+      
       // Salva o usuário no estado
-      setUser(user);
+      setUser(normalizedUser);
 
       return true;
     } catch (error) {
@@ -94,8 +117,15 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.updateProfile(data);
       // authService retorna { user }, então pegamos o user
       const updatedUser = response.user;
-      setUser(updatedUser);
-      return updatedUser;
+      
+      // Normalizar o role para garantir consistência
+      const normalizedUser = {
+        ...updatedUser,
+        role: updatedUser.role ? String(updatedUser.role).toUpperCase() : 'USER',
+      };
+      
+      setUser(normalizedUser);
+      return normalizedUser;
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
       throw error;

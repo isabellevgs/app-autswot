@@ -53,10 +53,19 @@ export const loginUser = async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
     const { user, accessToken, refreshToken } = response.data;
     
-    // Salvar tokens e dados do usuário
-    saveAuth(accessToken, refreshToken, user);
+    // Normalizar o role antes de salvar
+    const normalizedUser = {
+      ...user,
+      role: user.role ? String(user.role).toUpperCase() : 'USER',
+    };
     
-    return response.data;
+    // Salvar tokens e dados do usuário
+    saveAuth(accessToken, refreshToken, normalizedUser);
+    
+    return {
+      ...response.data,
+      user: normalizedUser,
+    };
   } catch (error) {
     console.error('Erro no login:', error);
     
@@ -90,10 +99,19 @@ export const registerUser = async (name, email, password) => {
     const response = await api.post('/auth/register', { name, email, password });
     const { user, accessToken, refreshToken } = response.data;
     
-    // Salvar tokens e dados do usuário
-    saveAuth(accessToken, refreshToken, user);
+    // Normalizar o role antes de salvar
+    const normalizedUser = {
+      ...user,
+      role: user.role ? String(user.role).toUpperCase() : 'USER',
+    };
     
-    return response.data;
+    // Salvar tokens e dados do usuário
+    saveAuth(accessToken, refreshToken, normalizedUser);
+    
+    return {
+      ...response.data,
+      user: normalizedUser,
+    };
   } catch (error) {
     console.error('Erro no registro:', error);
     
@@ -132,10 +150,16 @@ export const getCurrentUser = async () => {
     const response = await api.get('/auth/me');
     const { user } = response.data;
     
-    // Atualizar dados do usuário no localStorage
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    // Normalizar o role antes de salvar
+    const normalizedUser = {
+      ...user,
+      role: user.role ? String(user.role).toUpperCase() : 'USER',
+    };
     
-    return user;
+    // Atualizar dados do usuário no localStorage
+    localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
+    
+    return normalizedUser;
   } catch (error) {
     // Se o token for inválido, fazer logout
     if (error.response && error.response.status === 401) {
@@ -155,10 +179,19 @@ export const updateProfile = async (data) => {
     const response = await api.put('/auth/profile', data);
     const { user } = response.data;
     
-    // Atualizar dados do usuário no localStorage
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    // Normalizar o role antes de salvar
+    const normalizedUser = {
+      ...user,
+      role: user.role ? String(user.role).toUpperCase() : 'USER',
+    };
     
-    return response.data;
+    // Atualizar dados do usuário no localStorage
+    localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
+    
+    return {
+      ...response.data,
+      user: normalizedUser,
+    };
   } catch (error) {
     console.error('Erro ao atualizar perfil:', error);
     

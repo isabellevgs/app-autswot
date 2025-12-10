@@ -23,16 +23,27 @@ const PrivateRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Debug: log do role do usuário
-  if (user) {
-    console.log('🔍 [DEBUG] PrivateRoute (app) - Role do usuário:', user.role, 'Tipo:', typeof user.role);
-  }
-  
   // Verificar se o usuário tem permissão (USER ou SUPER_USER)
   // Normalizar o role para garantir comparação correta
-  const userRole = user?.role?.toString().trim().toUpperCase();
-  if (user && userRole !== 'USER' && userRole !== 'SUPER_USER') {
-    console.error('❌ [DEBUG] PrivateRoute (app) - Role inválido:', userRole, 'Esperado: USER ou SUPER_USER');
+  // Se o role não existir ou for inválido, tratar como sem permissão
+  let userRole = null;
+  if (user?.role) {
+    try {
+      userRole = String(user.role).trim().toUpperCase();
+    } catch (e) {
+      console.error('❌ [DEBUG] PrivateRoute (app) - Erro ao normalizar role:', e);
+      userRole = null;
+    }
+  }
+  
+  // Debug: log do role do usuário
+  if (user) {
+    console.log('🔍 [DEBUG] PrivateRoute (app) - Role do usuário:', user.role, 'Normalizado:', userRole, 'Tipo:', typeof user.role);
+  }
+  
+  // Verificar se o usuário tem permissão válida
+  if (user && (!userRole || (userRole !== 'USER' && userRole !== 'SUPER_USER'))) {
+    console.error('❌ [DEBUG] PrivateRoute (app) - Role inválido:', userRole, 'Esperado: USER ou SUPER_USER', 'User completo:', user);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center max-w-md mx-auto p-8 bg-white rounded-lg shadow-lg">

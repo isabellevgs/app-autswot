@@ -46,7 +46,8 @@ function Conteudo() {
       setCards(response.data.posts || [])
     } catch (err) {
       console.error('Erro ao carregar posts:', err)
-      setError('Erro ao carregar posts. Tente novamente.')
+      const errorMessage = err.response?.data?.error || err.message || 'Erro ao carregar posts. Tente novamente.'
+      setError(errorMessage)
       setCards([])
     } finally {
       setLoading(false)
