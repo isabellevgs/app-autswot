@@ -232,7 +232,7 @@ function Cadastrar() {
             type="text"
             value={formData.especialistaIndicacao}
             onChange={(e) => handleChange('especialistaIndicacao', e.target.value)}
-            required
+            // required
           />
           <FormSelect
             id="diagnosticadoTea"
@@ -240,7 +240,7 @@ function Cadastrar() {
             value={formData.diagnosticadoTea}
             onChange={(e) => handleChange('diagnosticadoTea', e.target.value)}
             options={SIM_NAO}
-            required
+            // required
           />
           <FormSelect
             id="outrasCondicoes"
@@ -248,14 +248,14 @@ function Cadastrar() {
             value={formData.outrasCondicoesSaude}
             onChange={(e) => handleChange('outrasCondicoesSaude', e.target.value)}
             options={SIM_NAO}
-            required
+            // required
           />
           <FormTextarea
             id="outrasCondicoesDetalhe"
             label='Se sim, indique quais (use "outro" se preferir detalhar)'
             value={formData.outrasCondicoesDetalhe}
             onChange={(e) => handleChange('outrasCondicoesDetalhe', e.target.value)}
-            required={formData.outrasCondicoesSaude === 'sim'}
+            // required={formData.outrasCondicoesSaude === 'sim'}
             rows={3}
           />
           <FormSelect
@@ -264,7 +264,7 @@ function Cadastrar() {
             value={formData.acessoMedicacoes}
             onChange={(e) => handleChange('acessoMedicacoes', e.target.value)}
             options={ACESSO_MEDICACOES}
-            required
+            // required
           />
           <FormSelect
             id="terapias"
@@ -272,7 +272,7 @@ function Cadastrar() {
             value={formData.terapiasNaoMedicamentosas}
             onChange={(e) => handleChange('terapiasNaoMedicamentosas', e.target.value)}
             options={TERAPIAS}
-            required
+            // required
           />
         </section>
 
@@ -283,7 +283,7 @@ function Cadastrar() {
             type="text"
             value={formData.idade}
             onChange={(e) => handleChange('idade', e.target.value)}
-            required
+            // required
           />
           <FormSelect
             id="corRaca"
@@ -291,7 +291,7 @@ function Cadastrar() {
             value={formData.corRaca}
             onChange={(e) => handleChange('corRaca', e.target.value)}
             options={COR_RACA}
-            required
+            // required
           />
           <FormSelect
             id="genero"
@@ -299,7 +299,7 @@ function Cadastrar() {
             value={formData.genero}
             onChange={(e) => handleChange('genero', e.target.value)}
             options={GENERO}
-            required
+            // required
           />
           {formData.genero === 'outro' && (
             <Input
@@ -307,7 +307,7 @@ function Cadastrar() {
               type="text"
               value={formData.generoOutroTexto}
               onChange={(e) => handleChange('generoOutroTexto', e.target.value)}
-              required
+              // required
             />
           )}
           <Input
@@ -315,7 +315,7 @@ function Cadastrar() {
             type="text"
             value={formData.profissao}
             onChange={(e) => handleChange('profissao', e.target.value)}
-            required
+            // required
           />
           <FormSelect
             id="escolaridade"
@@ -323,7 +323,7 @@ function Cadastrar() {
             value={formData.escolaridade}
             onChange={(e) => handleChange('escolaridade', e.target.value)}
             options={ESCOLARIDADE}
-            required
+            // required
           />
         </section>
 
@@ -335,7 +335,7 @@ function Cadastrar() {
             value={formData.comQuemMora}
             onChange={(e) => handleChange('comQuemMora', e.target.value)}
             options={COM_QUEM_MORA}
-            required
+            // required
           />
           <FormSelect
             id="situacaoTrabalho"
@@ -343,14 +343,14 @@ function Cadastrar() {
             value={formData.situacaoTrabalho}
             onChange={(e) => handleChange('situacaoTrabalho', e.target.value)}
             options={SITUACAO_TRABALHO}
-            required
+            // required
           />
           <FormTextarea
             id="auxilioGoverno"
             label="Você tentou receber algum tipo de auxílio financeiro do governo como o Bolsa Família e o BPC-LOAS? Se sim, diga se você conseguiu e conte como foi sua experiência durante o processo de solicitação"
             value={formData.auxilioGovernoExperiencia}
             onChange={(e) => handleChange('auxilioGovernoExperiencia', e.target.value)}
-            required
+            // required
             rows={4}
           />
           <FormSelect
@@ -359,7 +359,7 @@ function Cadastrar() {
             value={formData.nivelRenda}
             onChange={(e) => handleChange('nivelRenda', e.target.value)}
             options={NIVEL_RENDA}
-            required
+            // required
           />
         </section>
 
@@ -371,7 +371,7 @@ function Cadastrar() {
             value={formData.burnout}
             onChange={(e) => handleChange('burnout', e.target.value)}
             options={SIM_NAO}
-            required
+            // required
           />
           {formData.burnout === 'sim' && (
             <FormTextarea
@@ -379,7 +379,7 @@ function Cadastrar() {
               label="Se sim, descreva como foi (por exemplo, perda de habilidades, consequências, como melhorou)"
               value={formData.burnoutDescricao}
               onChange={(e) => handleChange('burnoutDescricao', e.target.value)}
-              required
+              // required
               rows={4}
             />
           )}
@@ -389,7 +389,7 @@ function Cadastrar() {
             value={formData.pensamentosSuicidio}
             onChange={(e) => handleChange('pensamentosSuicidio', e.target.value)}
             options={PENSAMENTOS_SUICIDIO}
-            required
+            // required
           />
           <FormSelect
             id="frequenciaSuicidio"
@@ -397,14 +397,14 @@ function Cadastrar() {
             value={formData.frequenciaSuicidio12meses}
             onChange={(e) => handleChange('frequenciaSuicidio12meses', e.target.value)}
             options={FREQUENCIA_SUICIDIO_12M}
-            required
+            // required
           />
           <FormTextarea
             id="contouSuicidio"
             label="Você já contou ou mencionou a outra pessoa que pretendia tirar a própria vida ou que pensou em fazer isso? Se sim, escreva para quem e como foi. Se não, liste e explique as barreiras"
             value={formData.contouSuicidioOuBarreiras}
             onChange={(e) => handleChange('contouSuicidioOuBarreiras', e.target.value)}
-            required
+            // required
             rows={5}
           />
           <FormTextarea
@@ -414,7 +414,7 @@ function Cadastrar() {
             onChange={(e) =>
               handleChange('probabilidadeSuicidioFuturoExplicacao', e.target.value)
             }
-            required
+            // required
             rows={5}
           />
         </section>
