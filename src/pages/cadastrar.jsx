@@ -195,7 +195,6 @@ function Cadastrar() {
         )}
 
         <section className="space-y-4 border-b border-gray-200 pb-6">
-          <h2 className="text-lg font-bold text-gray-900">Acesso à conta</h2>
           <Input
             label="Nome"
             type="text"
