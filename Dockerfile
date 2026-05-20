@@ -35,6 +35,8 @@ COPY scripts/docker-entrypoint.sh /docker-entrypoint-autswot.sh
 RUN chmod +x /docker-entrypoint-autswot.sh
 
 ENV AUTSWOT_SERVICE=autswot-app
+ENV API_UPSTREAM_HOST=host.docker.internal
+ENV API_UPSTREAM_PORT=3000
 
 # Expor porta 80
 EXPOSE 80
