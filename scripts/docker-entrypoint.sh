@@ -5,7 +5,7 @@
 # Sempre inicia o nginx, mesmo se a API estiver indisponível.
 
 SERVICE="${AUTSWOT_SERVICE:-autswot-app}"
-API_HOST="${API_UPSTREAM_HOST:-autswot-api}"
+API_HOST="${API_UPSTREAM_HOST:-host.docker.internal}"
 API_PORT="${API_UPSTREAM_PORT:-3000}"
 MAX_ATTEMPTS="${API_CHECK_RETRIES:-5}"
 RETRY_DELAY="${API_CHECK_DELAY:-3}"
@@ -17,6 +17,14 @@ log() {
 log "========== Verificação pós-deploy =========="
 log "Container: $(hostname)"
 log "API upstream: http://${API_HOST}:${API_PORT}"
+
+if ! grep -q "host.docker.internal" /etc/hosts 2>/dev/null; then
+  gateway=$(ip route show default 2>/dev/null | awk '{print $3}' | head -1)
+  if [ -n "${gateway}" ]; then
+    echo "${gateway} host.docker.internal" >> /etc/hosts
+    log "host.docker.internal → ${gateway} (gateway Docker)"
+  fi
+fi
 
 api_ok=0
 attempt=1
@@ -40,12 +48,9 @@ done
 
 if [ "${api_ok}" -eq 0 ]; then
   log "API: FALHOU após ${MAX_ATTEMPTS} tentativas"
-  log "Causa provável: app e API não estão na mesma rede Docker"
-  log "Correção na VPS:"
-  log "  docker network create coolify 2>/dev/null || true"
-  log "  docker network connect --alias autswot-api coolify <container-api>"
-  log "  docker network connect coolify <container-app>"
-  log "Proxy /api/* retornará 502 até corrigir a rede"
+  log "Causa provável: API não está acessível em host.docker.internal:${API_PORT}"
+  log "Verifique se a API publica a porta 3000: docker ps --filter publish=3000"
+  log "Proxy /api/* retornará 502 até a API estar acessível"
 else
   log "Verificação concluída com sucesso"
 fi
