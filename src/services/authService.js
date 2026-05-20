@@ -1,6 +1,8 @@
 // Gerenciamento de autenticação e tokens JWT
 import api from './api';
 
+const apiUrl = () => api.defaults.baseURL ?? import.meta.env.VITE_API_URL ?? '';
+
 export const ACCESS_TOKEN_KEY = "@autswot-access-token";
 export const REFRESH_TOKEN_KEY = "@autswot-refresh-token";
 export const USER_KEY = "@autswot-user";
@@ -74,12 +76,12 @@ export const loginUser = async (email, password) => {
       const errorMsg = error.response.data?.error || error.response.data?.message || 'Erro ao fazer login';
       throw new Error(errorMsg);
     } else if (error.code === 'ECONNREFUSED') {
-      throw new Error('Não foi possível conectar à API. Verifique se o servidor está rodando em http://localhost:3000');
+      throw new Error('Não foi possível conectar à API. Verifique se o servidor está acessível');
     } else if (error.code === 'ETIMEDOUT') {
       throw new Error('A requisição demorou muito. Verifique sua conexão com a internet.');
     } else if (error.request) {
       // Erro de rede
-      throw new Error('Erro de conexão. Verifique sua internet e se a API está rodando em http://localhost:3000');
+      throw new Error('Erro de conexão. Verifique sua conexão com a internet');
     } else {
       // Outro erro
       throw new Error(error.message || 'Erro ao fazer login');
@@ -126,12 +128,12 @@ export const registerUser = async (registrationPayload) => {
       
       throw new Error(errorMsg);
     } else if (error.code === 'ECONNREFUSED') {
-      throw new Error('Não foi possível conectar à API. Verifique se o servidor está rodando em http://localhost:3000');
+      throw new Error('Não foi possível conectar à API. Verifique se o servidor está acessível');
     } else if (error.code === 'ETIMEDOUT') {
       throw new Error('A requisição demorou muito. Verifique sua conexão com a internet.');
     } else if (error.request) {
       // Erro de rede
-      throw new Error('Erro de conexão. Verifique sua internet e se a API está rodando em http://localhost:3000');
+      throw new Error('Erro de conexão. Verifique sua conexão com a internet');
     } else {
       // Outro erro
       throw new Error(error.message || 'Erro ao criar conta');
@@ -197,11 +199,11 @@ export const updateProfile = async (data) => {
       const errorMsg = error.response.data?.error || error.response.data?.message || 'Erro ao atualizar perfil';
       throw new Error(errorMsg);
     } else if (error.code === 'ECONNREFUSED') {
-      throw new Error('Não foi possível conectar à API. Verifique se o servidor está rodando em http://localhost:3000');
+      throw new Error('Não foi possível conectar à API. Verifique se o servidor está acessível');
     } else if (error.code === 'ETIMEDOUT') {
       throw new Error('A requisição demorou muito. Verifique sua conexão com a internet.');
     } else if (error.request) {
-      throw new Error('Erro de conexão. Verifique sua internet e se a API está rodando em http://localhost:3000');
+      throw new Error('Erro de conexão. Verifique sua conexão com a internet');
     }
     throw new Error(error.message || 'Erro ao atualizar perfil');
   }
@@ -215,22 +217,15 @@ export const updateProfile = async (data) => {
  */
 export const changePassword = async (currentPassword, newPassword) => {
   try {
-    console.log('Iniciando requisição changePassword...');
-    console.log('Endpoint:', '/v1/auth/change-password');
-    console.log('Payload:', { currentPassword, newPassword });
     
     const response = await api.put('/v1/auth/change-password', {
       currentPassword,
       newPassword,
     });
     
-    console.log('Resposta recebida:', response.data);
     return response.data;
   } catch (error) {
     console.error('Erro na API changePassword:', error);
-    console.error('Status:', error.response?.status);
-    console.error('Data:', error.response?.data);
-    console.error('Request:', error.request);
     
     console.error('Erro ao trocar senha:', error);
     
@@ -242,11 +237,11 @@ export const changePassword = async (currentPassword, newPassword) => {
                       'Erro ao trocar senha';
       throw new Error(errorMsg);
     } else if (error.code === 'ECONNREFUSED') {
-      throw new Error('Não foi possível conectar à API. Verifique se o servidor está rodando em http://localhost:3000');
+      throw new Error('Não foi possível conectar à API. Verifique se o servidor está acessível');
     } else if (error.code === 'ETIMEDOUT') {
       throw new Error('A requisição demorou muito. Verifique sua conexão com a internet.');
     } else if (error.request) {
-      throw new Error('Erro de conexão. Verifique sua internet e se a API está rodando em http://localhost:3000');
+      throw new Error('Erro de conexão. Verifique sua conexão com a internet');
     }
     throw new Error(error.message || 'Erro ao trocar senha');
   }
