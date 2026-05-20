@@ -9,7 +9,9 @@ const defaultContextValue = {
     throw new Error("AuthContext não foi inicializado. Certifique-se de que o componente está dentro de um AuthProvider.");
   },
   register: async () => {
-    throw new Error("AuthContext não foi inicializado. Certifique-se de que o componente está dentro de um AuthProvider.");
+    throw new Error(
+      "AuthContext não foi inicializado. Certifique-se de que o componente está dentro de um AuthProvider."
+    );
   },
   logout: () => {
     throw new Error("AuthContext não foi inicializado. Certifique-se de que o componente está dentro de um AuthProvider.");
@@ -80,10 +82,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Função de registro
-  const register = async (name, email, password) => {
+  const register = async (registrationPayload) => {
     try {
-      // Chama a API de registro
-      const { user, accessToken, refreshToken } = await authService.registerUser(name, email, password);
+      const { user, accessToken, refreshToken } =
+        await authService.registerUser(registrationPayload);
       
       // Buscar dados atualizados do usuário do servidor para garantir que o role está normalizado
       // Isso resolve o problema de permissão após registro

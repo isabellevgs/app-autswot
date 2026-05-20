@@ -1,9 +1,12 @@
 // Layout padrão para páginas de autenticação (Login, Cadastro, etc)
+// wide: card mais largo (ex.: formulário de cadastro longo)
 
-function AuthLayout({ children, title, subtitle }) {
+function AuthLayout({ children, title, subtitle, wide = false }) {
+  const cardWidth = wide ? 'max-w-4xl' : 'max-w-md';
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-8">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-12 w-full max-w-md">
+      <div className={`bg-white rounded-2xl shadow-2xl p-8 sm:p-12 w-full ${cardWidth}`}>
         {(title || subtitle) && (
           <div className="text-center mb-8">
             {title && (

@@ -88,15 +88,13 @@ export const loginUser = async (email, password) => {
 };
 
 /**
- * Registra um novo usuário
- * @param {string} name - Nome do usuário
- * @param {string} email - Email do usuário
- * @param {string} password - Senha do usuário
- * @returns {Promise<{user: Object, token: string}>}
+ * Registra um novo usuário (nome, e-mail, senha e ficha sociodemográfica)
+ * @param {Object} registrationPayload - Corpo completo conforme API /auth/register
+ * @returns {Promise<{user: Object, accessToken: string, refreshToken: string}>}
  */
-export const registerUser = async (name, email, password) => {
+export const registerUser = async (registrationPayload) => {
   try {
-    const response = await api.post('/auth/register', { name, email, password });
+    const response = await api.post('/auth/register', registrationPayload);
     const { user, accessToken, refreshToken } = response.data;
     
     // Normalizar o role antes de salvar

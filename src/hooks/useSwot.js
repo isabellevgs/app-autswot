@@ -1,40 +1,48 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { transformarDadosSwot } from '../utils/swotUtils';
 import { SWOT_MODULOS } from '../constants/swotConfig';
 
+const dadosVazios = () =>
+  Object.keys(SWOT_MODULOS).reduce((acc, key) => {
+    acc[key] = { ...SWOT_MODULOS[key], items: [] };
+    return acc;
+  }, {});
+
 /**
- * Hook para gerenciar estado e buscar dados do SWOT
+ * Hook para gerenciar estado e buscar dados do SWOT + progresso de desbloqueio.
  */
 export function useSwot() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [dadosSwot, setDadosSwot] = useState(() => {
-    // Inicializar com estrutura vazia
-    return Object.keys(SWOT_MODULOS).reduce((acc, key) => {
-      acc[key] = {
-        ...SWOT_MODULOS[key],
-        items: []
-      };
-      return acc;
-    }, {});
-  });
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState(null);
+  const [dadosSwot,  setDadosSwot]  = useState(dadosVazios);
+  const [progresso,  setProgresso]  = useState(null);
+
+  const buscarProgresso = useCallback(async () => {
+    try {
+      const res = await api.get('/reflexao-traco/progresso');
+      setProgresso(res.data);
+    } catch {
+      // progresso indisponível — mantém bloqueio padrão
+    }
+  }, []);
 
   useEffect(() => {
     const buscarSwot = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        const response = await api.get('/questionario-resposta/swot');
-        const swotData = response.data;
-        const dadosTransformados = transformarDadosSwot(swotData);
 
-        // Combinar configuração com dados transformados
+        const [swotRes] = await Promise.all([
+          api.get('/questionario-resposta/swot'),
+          buscarProgresso(),
+        ]);
+
+        const dadosTransformados = transformarDadosSwot(swotRes.data);
         const dadosCompletos = Object.keys(SWOT_MODULOS).reduce((acc, key) => {
           acc[key] = {
             ...SWOT_MODULOS[key],
-            items: dadosTransformados[key]?.items || []
+            items: dadosTransformados[key]?.items || [],
           };
           return acc;
         }, {});
@@ -49,12 +57,7 @@ export function useSwot() {
     };
 
     buscarSwot();
-  }, []);
+  }, [buscarProgresso]);
 
-  return {
-    dadosSwot,
-    loading,
-    error
-  };
+  return { dadosSwot, progresso, loading, error, refreshProgresso: buscarProgresso };
 }
-

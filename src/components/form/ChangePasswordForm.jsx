@@ -92,6 +92,7 @@ function ChangePasswordForm({ onCancel }) {
         required
         hasError={!!passwordError}
         error={passwordError}
+        autoComplete="current-password"
       />
 
       <PasswordInput
@@ -100,6 +101,7 @@ function ChangePasswordForm({ onCancel }) {
         onChange={(value) => handlePasswordChange('newPassword', value)}
         placeholder="Digite sua nova senha"
         required
+        autoComplete="new-password"
       />
 
       <PasswordInput
@@ -108,6 +110,7 @@ function ChangePasswordForm({ onCancel }) {
         onChange={(value) => handlePasswordChange('confirmPassword', value)}
         placeholder="Confirme sua nova senha"
         required
+        autoComplete="new-password"
       />
 
       <div className="flex gap-3 pt-2">

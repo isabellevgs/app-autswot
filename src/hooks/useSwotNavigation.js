@@ -5,9 +5,10 @@ import { useState } from 'react';
  */
 export function useSwotNavigation(dadosSwot) {
   const [expandido, setExpandido] = useState(null);
+  const SECAO_LIBERADA = 'ameacas';
 
   const isDesbloqueado = (secao) => {
-    return dadosSwot[secao]?.items?.length > 0;
+    return secao === SECAO_LIBERADA && dadosSwot[secao]?.items?.length > 0;
   };
 
   const toggleSecao = (secao) => {

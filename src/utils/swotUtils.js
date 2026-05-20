@@ -2,50 +2,49 @@
  * Utilitários para processamento de dados SWOT
  */
 
+const TIPO_LABEL = {
+  SH: 'Fraquezas e Ameaças SH',
+  CH: 'Fraquezas e Ameaças CH',
+  FO: 'Fraquezas e Oportunidades',
+  F:  'Forças',
+};
+
 /**
- * Mapeia um traço da API para formato de exibição
+ * Mapeia um traço da API para objeto de exibição (com quadrante)
+ * @param {object} traco - dados vindos da API
+ * @param {string} quadrante - 'ameaca' | 'fraqueza' | 'oportunidade' | 'forca'
  */
-export function mapearTraco(traco) {
-  // Se o campo swot existir e não estiver vazio, usa ele. Caso contrário, usa o formato antigo
-  if (traco.swot && traco.swot.trim() !== '') {
-    return traco.swot;
-  }
-  
-  const tipoLabel = {
-    'SH': 'Fraquezas e Ameaças SH',
-    'CH': 'Fraquezas e Ameaças CH',
-    'FO': 'Fraquezas e Oportunidades',
-    'F': 'Forças'
-  }[traco.tipo] || traco.tipo;
-  
-  return `Traço ${traco.numeroTraco} - ${tipoLabel}`;
+export function mapearTraco(traco, quadrante) {
+  const label =
+    traco.swot && traco.swot.trim() !== ''
+      ? traco.swot
+      : `Traço ${traco.numeroTraco} - ${TIPO_LABEL[traco.tipo] || traco.tipo}`;
+
+  return {
+    label,
+    tipo:        traco.tipo,
+    numeroTraco: traco.numeroTraco,
+    perguntaId:  traco.perguntaId,
+    quadrante,
+  };
 }
 
 /**
- * Transforma dados da API em formato de módulos SWOT
+ * Transforma dados da API em formato de módulos SWOT.
+ * Os items retornados são objetos { label, tipo, numeroTraco, perguntaId, quadrante }.
  */
 export function transformarDadosSwot(swotData) {
-  // Função auxiliar para mapear e filtrar itens válidos
-  const mapearEFiltrar = (array) => {
-    if (!array || !Array.isArray(array)) return [];
+  const mapear = (array, quadrante) => {
+    if (!Array.isArray(array)) return [];
     return array
-      .map(mapearTraco)
-      .filter(item => item && item.trim() !== ''); // Remove itens vazios ou null
+      .map((t) => mapearTraco(t, quadrante))
+      .filter((item) => item.label && item.label.trim() !== '');
   };
 
   return {
-    ameacas: {
-      items: mapearEFiltrar(swotData.ameacas)
-    },
-    fraquezas: {
-      items: mapearEFiltrar(swotData.fraquezas)
-    },
-    oportunidades: {
-      items: mapearEFiltrar(swotData.oportunidades)
-    },
-    forcas: {
-      items: mapearEFiltrar(swotData.forcas)
-    }
+    ameacas:      { items: mapear(swotData.ameacas,      'ameaca')      },
+    fraquezas:    { items: mapear(swotData.fraquezas,    'fraqueza')    },
+    oportunidades:{ items: mapear(swotData.oportunidades,'oportunidade') },
+    forcas:       { items: mapear(swotData.forcas,       'forca')       },
   };
 }
-

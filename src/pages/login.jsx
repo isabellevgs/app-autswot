@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { AuthLayout, Input, Button } from '../components';
+import { AuthLayout, Input, PasswordInput, Button } from '../components';
 
 function Login() {
   const navigate = useNavigate();
@@ -47,13 +47,12 @@ function Login() {
           required
         />
 
-        {/* Senha */}
-        <Input
+        <PasswordInput
           label="Senha"
-          type="password"
           value={formData.senha}
-          onChange={(e) => handleChange('senha', e.target.value)}
+          onChange={(value) => handleChange('senha', value)}
           required
+          autoComplete="current-password"
         />
 
         {/* Botão Entrar */}
