@@ -21,4 +21,5 @@ networks:
   autswot-network:
     driver: bridge
   coolify:
+    name: coolify
     external: true
