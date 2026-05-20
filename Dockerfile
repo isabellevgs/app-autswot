@@ -30,8 +30,13 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copiar configuração customizada do nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Script de verificação pós-deploy (logs de DNS + /health da API)
+COPY scripts/docker-entrypoint.sh /docker-entrypoint-autswot.sh
+RUN chmod +x /docker-entrypoint-autswot.sh
+
+ENV AUTSWOT_SERVICE=autswot-app
+
 # Expor porta 80
 EXPOSE 80
 
-# Iniciar nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/docker-entrypoint-autswot.sh"]
