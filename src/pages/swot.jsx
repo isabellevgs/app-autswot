@@ -1,14 +1,29 @@
+import { Download } from 'lucide-react';
 import { PageContainer, SectionHeader, ContentCard } from '../components';
+import Button from '../components/ui/Button';
+import { useAuth } from '../contexts/AuthContext';
 import { useSwot } from '../hooks/useSwot';
 import SwotLoading from '../components/swot/SwotLoading';
 import SwotError from '../components/swot/SwotError';
 import SwotGrid from '../components/swot/SwotGrid';
+import { gerarSwotPdf } from '../lib/swot-pdf';
 
 const introP =
   'font-serif text-gray-900 text-base sm:text-lg leading-relaxed text-justify';
 
 function Swot() {
+  const { user } = useAuth();
   const { dadosSwot, progresso, loading, error, refreshProgresso } = useSwot();
+
+  const totalItens = Object.values(dadosSwot).reduce(
+    (acc, modulo) => acc + (modulo.items?.length || 0),
+    0,
+  );
+
+  const handleBaixarPdf = () => {
+    if (totalItens === 0) return;
+    gerarSwotPdf(user?.name || 'Usuário', dadosSwot);
+  };
 
   if (loading) {
     return <SwotLoading />;
@@ -81,6 +96,17 @@ function Swot() {
             progresso={progresso}
             onProgressoChange={refreshProgresso}
           />
+
+          <div className="flex justify-center pt-2">
+            <Button
+              onClick={handleBaixarPdf}
+              disabled={totalItens === 0}
+              className="inline-flex items-center gap-2"
+            >
+              <Download className="w-5 h-5" />
+              BAIXAR EM PDF
+            </Button>
+          </div>
         </div>
       </div>
     </PageContainer>
