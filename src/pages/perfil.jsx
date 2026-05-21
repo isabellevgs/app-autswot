@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Save, X, LogOut } from 'lucide-react';
+import { User, Mail, Lock, Save, X, LogOut, ClipboardList } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   ProfileHeader, 
   SectionCard, 
   FormInput, 
   Button,
-  ChangePasswordForm
+  ChangePasswordForm,
+  ProfileRegistrationDisplay,
 } from '../components';
+import * as authService from '../services/authService';
 
 function Perfil() {
   const navigate = useNavigate();
@@ -23,6 +25,8 @@ function Perfil() {
   });
   
   const [editData, setEditData] = useState({ ...userData });
+  const [profileRegistration, setProfileRegistration] = useState(null);
+  const [loadingRegistration, setLoadingRegistration] = useState(true);
 
   // Atualizar userData quando o user mudar
   useEffect(() => {
@@ -37,6 +41,32 @@ function Perfil() {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRegistration() {
+      if (!user) {
+        setLoadingRegistration(false);
+        return;
+      }
+
+      try {
+        const userData = await authService.getCurrentUser();
+        if (!cancelled) {
+          setProfileRegistration(userData.profileRegistration ?? null);
+        }
+      } catch {
+        if (!cancelled) setProfileRegistration(null);
+      } finally {
+        if (!cancelled) setLoadingRegistration(false);
+      }
+    }
+
+    setLoadingRegistration(true);
+    loadRegistration();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -189,6 +219,19 @@ function Perfil() {
                   Cancelar
                 </Button>
               </div>
+            )}
+          </SectionCard>
+
+          {/* Seção: Dados do cadastro */}
+          <SectionCard
+            icon={ClipboardList}
+            title="Dados do cadastro"
+            description="Informações sociodemográficas e de saúde informadas no cadastro"
+          >
+            {loadingRegistration ? (
+              <p className="text-sm text-gray-500">Carregando dados do cadastro...</p>
+            ) : (
+              <ProfileRegistrationDisplay registration={profileRegistration} />
             )}
           </SectionCard>
 

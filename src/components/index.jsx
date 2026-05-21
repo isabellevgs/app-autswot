@@ -24,6 +24,7 @@ export { default as termosModal } from './ui/termosModal';
 export { default as FormInput } from './form/FormInput';
 export { default as PasswordInput } from './form/PasswordInput';
 export { default as ChangePasswordForm } from './form/ChangePasswordForm';
+export { default as ProfileRegistrationDisplay } from './ProfileRegistrationDisplay';
 
 // Diary
 export { default as DiarySidebar } from './diary/DiarySidebar';
