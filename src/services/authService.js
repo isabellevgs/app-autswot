@@ -72,6 +72,9 @@ export const loginUser = async (email, password) => {
     console.error('Erro no login:', error);
     
     if (error.response) {
+      if (error.response.status === 429) {
+        throw new Error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+      }
       // Erro da API
       const errorMsg = error.response.data?.error || error.response.data?.message || 'Erro ao fazer login';
       throw new Error(errorMsg);

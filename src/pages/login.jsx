@@ -24,7 +24,7 @@ function Login() {
       navigate('/');
     } catch (err) {
       console.error('Falha no login', err);
-      setErro('Credenciais inválidas. Tente novamente!');
+      setErro(err.message || 'Credenciais inválidas. Tente novamente!');
     }
   };
 
