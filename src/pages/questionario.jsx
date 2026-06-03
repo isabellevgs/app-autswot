@@ -217,9 +217,6 @@ function Questionario() {
                 key={perguntaAtualData.id || perguntaAtualIndex}
                 pergunta={perguntaAtualData.pergunta}
                 explicacao={perguntaAtualData.explicacao || null}
-                tracoNeutro={perguntaAtualData.tracoNeutro || []}
-                tracoOportunidade={perguntaAtualData.tracoOportunidade || []}
-                tracoFraqueza={perguntaAtualData.tracoFraqueza || []}
                 resposta={resposta}
                 onRespostaChange={setResposta}
                 frequencia={frequencia}
@@ -233,6 +230,8 @@ function Questionario() {
                 key={perguntaAtualData.id || perguntaAtualIndex}
                 pergunta={perguntaAtualData.pergunta}
                 exemplo={perguntaAtualData.exemplo || null}
+                resposta={resposta}
+                onRespostaChange={setResposta}
                 frequencia={frequencia}
                 onFrequenciaChange={setFrequencia}
               />

@@ -6,20 +6,14 @@ function respostaEstaCompleta(pergunta, respostaSalva) {
 
   const { resposta, frequencia, intensidade } = respostaSalva;
 
-  // Perguntas FO e F só precisam de frequência
-  if (pergunta.tipo === 'FO' || pergunta.tipo === 'F') {
-    return !!frequencia;
-  }
-
-  // Outras perguntas precisam de resposta
+  // Todas as perguntas precisam de resposta sim/não
   if (!resposta) return false;
 
   // Se resposta é "não", está completa
   if (resposta === 'nao') return true;
 
-  // Se resposta é "sim", precisa de intensidade ou frequência
+  // Se resposta é "sim", precisa de frequência (e intensidade para SH/CH)
   if (resposta === 'sim') {
-    // Verificar se a pergunta tem intensidade (SH e CH)
     const temIntensidade = pergunta.tipo === 'SH' || pergunta.tipo === 'CH';
     if (temIntensidade) {
       return !!intensidade && !!frequencia;

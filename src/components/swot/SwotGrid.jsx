@@ -1,29 +1,26 @@
 import { SwotCard } from '../index';
 import { useState, useCallback } from 'react';
 import { SWOT_ORDEM } from '../../constants/swotConfig';
+import {
+  DESBLOQUEIO_SEQUENCIAL_ATIVO,
+  QUADRANTE_POR_SECAO,
+  tracosFaltandoParaDesbloquear,
+} from '../../constants/swotQuadrantes';
 import SwotTracoModal from './SwotTracoModal';
 
-// Mapeamento: chave da seção → chave do progresso no backend
-const SECAO_PARA_QUADRANTE = {
-  ameacas:       'ameaca',
-  fraquezas:     'fraqueza',
-  oportunidades: 'oportunidade',
-  forcas:        'forca',
-};
-
-// Thresholds de desbloqueio (espelhados do backend apenas para exibição de "faltam N")
-const NECESSARIOS = { ameaca: 5, fraqueza: 3, oportunidade: 2, forca: 0 };
-
 function calcularStatus(secao, progresso) {
-  const quadrante = SECAO_PARA_QUADRANTE[secao];
+  if (!DESBLOQUEIO_SEQUENCIAL_ATIVO) {
+    return { bloqueado: false, descricao: 'Clique para expandir seus traços.' };
+  }
+
+  const quadrante = QUADRANTE_POR_SECAO[secao];
 
   if (!progresso) {
-    // Fallback enquanto o progresso carrega: só ameaças disponível
     return {
       bloqueado: secao !== 'ameacas',
       descricao: secao === 'ameacas'
         ? 'Clique para expandir seus traços.'
-        : 'Complete os exercícios do quadrante anterior para desbloquear.',
+        : 'Complete os traços do quadrante anterior para desbloquear.',
     };
   }
 
@@ -34,39 +31,24 @@ function calcularStatus(secao, progresso) {
     return { bloqueado: false, descricao: 'Clique para expandir seus traços.' };
   }
 
-  // Calcular quantos faltam no quadrante predecessor
-  const anterior = {
-    fraqueza:     progresso.ameaca,
-    oportunidade: progresso.fraqueza,
-    forca:        progresso.oportunidade,
-  }[quadrante];
-
-  const faltam = anterior ? Math.max(0, anterior.necessarios - anterior.concluidos) : NECESSARIOS[quadrante];
+  const concluidosPorQuadrante = Object.fromEntries(
+    Object.entries(progresso).map(([q, dados]) => [q, dados.concluidos]),
+  );
+  const faltam = tracosFaltandoParaDesbloquear(quadrante, concluidosPorQuadrante);
 
   return {
     bloqueado: true,
     descricao: faltam === 0
-      ? 'Complete os exercícios do quadrante anterior para desbloquear.'
-      : `Complete mais ${faltam} exercício${faltam !== 1 ? 's' : ''} no quadrante anterior para desbloquear.`,
+      ? 'Complete os traços do quadrante anterior para desbloquear.'
+      : `Responda mais ${faltam} traço${faltam !== 1 ? 's' : ''} no quadrante anterior para desbloquear.`,
   };
 }
 
-/**
- * Calcula a classe de largura de cada card no grid.
- *
- * Regra visual "1, 1 e 2":
- *   - Grid normal (tudo fechado): 2 colunas × 2 linhas
- *   - Quando um card da linha superior (índices 0-1) é aberto:
- *       → ambos os cards daquela linha viram col-span-2 (cada um ocupa a linha inteira)
- *       → os 2 cards da linha inferior ficam lado a lado (col-span-1 cada)
- *   - Idem para linha inferior (índices 2-3)
- */
 function colSpanPara(secaoIndex, expandidos) {
-  // Verifica se algum item em qualquer linha está expandido
   const algumExpandidoNaLinha = (linhaInicio) =>
     SWOT_ORDEM.slice(linhaInicio, linhaInicio + 2).some((s) => expandidos[s]);
 
-  const minhaLinha = secaoIndex < 2 ? 0 : 2; // índice inicial da minha linha
+  const minhaLinha = secaoIndex < 2 ? 0 : 2;
   return algumExpandidoNaLinha(minhaLinha) ? 'sm:col-span-2' : '';
 }
 

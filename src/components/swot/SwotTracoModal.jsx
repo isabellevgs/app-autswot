@@ -1,164 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import api from '../../services/api';
-
-// ─── Configuração das questões reflexivas por quadrante ────────────────────
-
-const QUESTOES_AMEACA_FRAQUEZA = [
-  {
-    id: 'q1',
-    min: 80,
-    texto: (
-      <>
-        Escreva abaixo <strong>quando e como</strong> foi a <strong>última vez</strong> que você se lembra deste{' '}
-        <strong>traço sendo manifestado</strong>. Pense em um momento recente em que esse traço{' '}
-        <strong>dificultou algo</strong> na sua rotina, nos seus estudos, no trabalho ou nos seus relacionamentos.
-      </>
-    ),
-  },
-  {
-    id: 'q2',
-    min: 60,
-    texto: (
-      <>
-        Escreva abaixo as <strong>consequências negativas ou positivas</strong> da situação citada e como você se{' '}
-        <strong>sentiu</strong> com relação a elas. Por exemplo, isso impactou prazos? Relacionamentos? Sua saúde mental?
-        Você sentiu frustração, culpa, exaustão ou algo parecido?
-      </>
-    ),
-  },
-  {
-    id: 'q3',
-    min: 50,
-    hasSubContent: true,
-    texto: (
-      <>
-        Escreva abaixo <strong>o que você pode fazer</strong> para <strong>evitar</strong> que esse traço se manifeste ou
-        para <strong>reduzir o impacto negativo</strong> dele.
-      </>
-    ),
-  },
-  {
-    id: 'q4',
-    min: 45,
-    texto: (
-      <>
-        Escreva abaixo o que você acha que as <strong>outras pessoas</strong> (professores, chefes, colegas, familiares,
-        amigos, parceiros românticos) podem fazer para te dar <strong>apoio e suporte</strong>.
-      </>
-    ),
-  },
-  {
-    id: 'q5',
-    min: 50,
-    texto: (
-      <>
-        Pensando em tudo que você citou nas perguntas acima, qual é a sua{' '}
-        <strong>necessidade específica de apoio ou suporte</strong> referente a esse traço?
-      </>
-    ),
-  },
-  {
-    id: 'q6',
-    min: 1,
-    texto: (
-      <>
-        O que <strong>você</strong> pode fazer <strong>somado</strong> ao que os <strong>outros</strong> podem fazer, é
-        suficiente? Se não for, liste abaixo o que mais seria necessário e que recursos você necessita.
-      </>
-    ),
-  },
-  {
-    id: 'q7',
-    min: 1,
-    texto: <>Como você pode conseguir as coisas citadas na questão acima. Liste e explique.</>,
-  },
-];
-
-const QUESTOES_OPORTUNIDADE = [
-  {
-    id: 'q1',
-    min: 70,
-    texto: (
-      <>
-        Escreva abaixo <strong>quando e como</strong> foi a <strong>última vez</strong> que você se lembra deste traço
-        sendo manifestado. Pense em um momento recente em que você tenha percebido que esse traço apareceu de forma{' '}
-        <strong>positiva ou negativa</strong>.
-      </>
-    ),
-  },
-  {
-    id: 'q2',
-    min: 60,
-    texto: (
-      <>
-        Escreva abaixo as <strong>consequências negativas ou positivas</strong> da situação citada e como você se sentiu
-        com relação a elas.
-      </>
-    ),
-  },
-  {
-    id: 'q3',
-    min: 45,
-    texto: (
-      <>
-        Se esse traço for trabalhado, que <strong>benefícios</strong> ele poderia trazer para sua vida? Pense no potencial
-        positivo escondido por trás da dificuldade.
-      </>
-    ),
-  },
-  {
-    id: 'q4',
-    min: 45,
-    texto: (
-      <>
-        Que tipo de <strong>apoio, estrutura ou suporte</strong> você precisaria para transformar esse traço em algo
-        positivo na sua vida?
-      </>
-    ),
-  },
-  {
-    id: 'q5',
-    min: 50,
-    texto: (
-      <>
-        O que você pode <strong>começar a fazer</strong> para transformar esse traço em uma força? Liste atitudes, hábitos,
-        pequenas mudanças que dependem de você.
-      </>
-    ),
-  },
-  {
-    id: 'q6',
-    min: 35,
-    texto: (
-      <>
-        Escreva abaixo o que você acha que as <strong>outras pessoas</strong> podem fazer para te dar{' '}
-        <strong>apoio e suporte</strong>.
-      </>
-    ),
-  },
-  {
-    id: 'q7',
-    min: 1,
-    texto: (
-      <>
-        O que você pode fazer somado ao que os outros podem fazer, é suficiente? Que recursos você precisa? Se não for,
-        liste o que mais seria necessário.
-      </>
-    ),
-  },
-  {
-    id: 'q8',
-    min: 1,
-    texto: <>Como você pode conseguir as coisas citadas na questão acima? Liste e explique.</>,
-  },
-];
-
-const QUESTOES_POR_QUADRANTE = {
-  ameaca:       QUESTOES_AMEACA_FRAQUEZA,
-  fraqueza:     QUESTOES_AMEACA_FRAQUEZA,
-  oportunidade: QUESTOES_OPORTUNIDADE,
-  forca:        [],
-};
+import { montarItensAtrapalhar, montarExemplosOportunidade, montarExemplosPraticosForca, montarComoUsar } from '../../constants/relatorioSh';
+import { ROTULOS_VER_MAIS } from '../../constants/relatorioAmeacaFraqueza.jsx';
+import { ROTULOS_VER_MAIS_FO, TITULOS_FO } from '../../constants/relatorioFo.jsx';
+import { TITULOS_FORCA } from '../../constants/relatorioForca.jsx';
+import {
+  TITULO_EXERCICIOS,
+  introExercicios,
+  questoesDoQuadrante,
+} from '../../constants/swotQuadranteExercicios.jsx';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -180,9 +30,42 @@ function tocadoInicial(questoes) {
 
 // ─── Sub-componentes ───────────────────────────────────────────────────────
 
-function ListaComVerMais({ itens = [], expandido, onToggle }) {
+function embaralharComSeed(itens, seed) {
+  const arr = [...itens];
+  let s = Math.abs(seed) || 1;
+  for (let i = arr.length - 1; i > 0; i--) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    const j = s % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function hashTraco(tipo, numeroTraco) {
+  const str = `${tipo}-${numeroTraco}`;
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h * 31 + str.charCodeAt(i)) | 0;
+  }
+  return h;
+}
+
+function ListaComVerMais({
+  itens = [],
+  expandido,
+  onToggle,
+  aleatorio = false,
+  seed = 0,
+  rotulos = { expandir: 'Clique aqui para ver mais', recolher: 'Ver menos' },
+}) {
+  const visiveis = useMemo(() => {
+    if (expandido || itens.length <= 2) return itens;
+    if (aleatorio) return embaralharComSeed(itens, seed).slice(0, 2);
+    return itens.slice(0, 2);
+  }, [itens, expandido, aleatorio, seed]);
+
   if (!itens.length) return null;
-  const visiveis = expandido ? itens : itens.slice(0, 2);
+
   return (
     <>
       <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
@@ -196,7 +79,7 @@ function ListaComVerMais({ itens = [], expandido, onToggle }) {
           onClick={onToggle}
           className="mt-2 text-sm font-semibold text-violet-700 hover:text-violet-900 underline underline-offset-2"
         >
-          {expandido ? 'Ver menos' : 'Clique aqui para ver mais'}
+          {expandido ? rotulos.recolher : rotulos.expandir}
         </button>
       )}
     </>
@@ -212,7 +95,6 @@ function CampoReflexao({ id, value, onChange, onBlur, minPalavras, invalid }) {
 
   return (
     <div className="space-y-1">
-      <p className="font-medium text-gray-900">R:</p>
       <textarea
         id={id}
         className={`w-full min-h-[140px] px-3 py-2 border rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 resize-y ${border}`}
@@ -237,12 +119,16 @@ function CampoReflexao({ id, value, onChange, onBlur, minPalavras, invalid }) {
 
 // ─── Conteúdo do modal ─────────────────────────────────────────────────────
 
-function ConteudoAmeacaFraqueza({ detalhe, secoes }) {
+function ConteudoAmeacaFraqueza({ detalhe, secoes, tracoSeed, exemplosVisivel }) {
   const [verAtrapalha, setVerAtrapalha] = useState(false);
   const [verDicas,     setVerDicas]     = useState(false);
   const [verExemplos,  setVerExemplos]  = useState(false);
 
-  const atrapalhar = (detalhe.comoAtrapalhar  || []);
+  useEffect(() => {
+    if (exemplosVisivel) setVerExemplos(true);
+  }, [exemplosVisivel]);
+
+  const atrapalhar = montarItensAtrapalhar(detalhe);
   const reduzir    = (detalhe.reduzirImpacto  || []);
   const dicas      = (detalhe.dicas           || []);
   const exemplos   = (detalhe.exemplos        || []);
@@ -251,8 +137,15 @@ function ConteudoAmeacaFraqueza({ detalhe, secoes }) {
     <>
       {atrapalhar.length > 0 && (
         <section id={secoes.atrapalhar} className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4 scroll-mt-4">
-          <h4 className="font-semibold text-gray-900">Como esse traço pode atrapalhar:</h4>
-          <ListaComVerMais itens={atrapalhar} expandido={verAtrapalha} onToggle={() => setVerAtrapalha((v) => !v)} />
+          <h4 className="font-semibold text-gray-900">Como esse traço pode atrapalhar</h4>
+          <ListaComVerMais
+            itens={atrapalhar}
+            expandido={verAtrapalha}
+            onToggle={() => setVerAtrapalha((v) => !v)}
+            aleatorio
+            seed={tracoSeed}
+            rotulos={ROTULOS_VER_MAIS.atrapalhar}
+          />
         </section>
       )}
 
@@ -266,50 +159,144 @@ function ConteudoAmeacaFraqueza({ detalhe, secoes }) {
       {dicas.length > 0 && (
         <section id={secoes.dicas} className="space-y-3 rounded-xl border border-violet-100 bg-violet-50/40 p-4 scroll-mt-4">
           <h4 className="font-semibold text-gray-900">Dicas práticas</h4>
-          <ListaComVerMais itens={dicas} expandido={verDicas} onToggle={() => setVerDicas((v) => !v)} />
+          <ListaComVerMais
+            itens={dicas}
+            expandido={verDicas}
+            onToggle={() => setVerDicas((v) => !v)}
+            rotulos={ROTULOS_VER_MAIS.dicas}
+          />
         </section>
       )}
 
-      {exemplos.length > 0 && (
+      {exemplos.length > 0 && exemplosVisivel && (
         <section id={secoes.exemplos} className="space-y-3 rounded-xl border border-violet-100 bg-violet-50/40 p-4 scroll-mt-4">
           <h4 className="font-semibold text-gray-900">Exemplos práticos</h4>
-          <ListaComVerMais itens={exemplos} expandido={verExemplos} onToggle={() => setVerExemplos((v) => !v)} />
+          <ListaComVerMais
+            itens={exemplos}
+            expandido={verExemplos}
+            onToggle={() => setVerExemplos((v) => !v)}
+            rotulos={ROTULOS_VER_MAIS.exemplos}
+          />
         </section>
       )}
     </>
   );
 }
 
-function ConteudoOportunidade({ detalhe }) {
-  const [verExemplos, setVerExemplos] = useState(false);
-  const [verDicas,    setVerDicas]    = useState(false);
+function TituloSecao({ children }) {
+  return <h4 className="font-semibold text-gray-900">{children}</h4>;
+}
 
-  const oport   = (detalhe.comoOportunidade || []);
-  const exemplos = (detalhe.exemplos        || []);
-  const dicas    = (detalhe.dicas           || []);
+function ConteudoFo({ detalhe, quadrante, secoes, tipoTraco }) {
+  const [verDicas, setVerDicas] = useState(false);
+
+  const mostrarOportunidade = quadrante === 'oportunidade';
+  const mostrarFraqueza = quadrante === 'fraqueza';
+  const isForca = tipoTraco === 'F';
+  const mostrarExemplosForca = isForca && (mostrarOportunidade || mostrarFraqueza);
+
+  const oport              = detalhe.comoOportunidade || [];
+  const exemplosOportunidade = isForca
+    ? montarExemplosPraticosForca(detalhe)
+    : montarExemplosOportunidade(detalhe);
+  const tituloExemplosOportunidade = isForca
+    ? TITULOS_FORCA.exemplosPraticos
+    : TITULOS_FO.exemplosOportunidade;
+  const tituloComoOportunidade = isForca
+    ? TITULOS_FORCA.comoOportunidade
+    : TITULOS_FO.comoOportunidade;
+  const tituloFraquezaOuAmeaca = isForca
+    ? TITULOS_FORCA.fraquezaOuOportunidade
+    : TITULOS_FO.fraquezaOuAmeaca;
+  const fraquezaOuAmeaca   = detalhe.fraquezaOuAmeaca || [];
+  const atrapalhar         = montarItensAtrapalhar(detalhe);
+  const transformarEmForca = detalhe.transformarEmForca || [];
+  const transformarEmOportunidade = detalhe.transformarEmOportunidade || [];
+  const dicas              = !isForca ? (detalhe.dicas || []) : [];
+  const exemplosPraticos   = detalhe.exemplos || [];
 
   return (
     <>
-      {oport.length > 0 && (
+      {mostrarOportunidade && oport.length > 0 && (
         <section className="space-y-3">
-          <h4 className="font-semibold text-gray-900">
-            Como esse traço pode ser uma oportunidade de se transformar em força, caso seja trabalhado
-          </h4>
+          <TituloSecao>{tituloComoOportunidade}</TituloSecao>
           {oport.map((p, i) => <p key={i} className="text-sm sm:text-base">{p}</p>)}
         </section>
       )}
 
-      {exemplos.length > 0 && (
-        <section className="space-y-3 rounded-xl border border-violet-100 bg-violet-50/40 p-4 scroll-mt-4">
-          <h4 className="font-semibold text-gray-900">Exemplos de como esse traço pode se tornar uma força</h4>
-          <ListaComVerMais itens={exemplos} expandido={verExemplos} onToggle={() => setVerExemplos((v) => !v)} />
+      {mostrarOportunidade && exemplosOportunidade.length > 0 && (
+        <section className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+          <TituloSecao>{tituloExemplosOportunidade}</TituloSecao>
+          <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
+            {exemplosOportunidade.map((texto, i) => (
+              <li key={i}>{texto}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {mostrarOportunidade && isForca && transformarEmForca.length > 0 && (
+        <section className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+          <TituloSecao>{TITULOS_FORCA.transformarEmForca}</TituloSecao>
+          <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
+            {transformarEmForca.map((texto, i) => (
+              <li key={i}>{texto}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {mostrarFraqueza && fraquezaOuAmeaca.length > 0 && (
+        <section className="space-y-3">
+          <TituloSecao>{tituloFraquezaOuAmeaca}</TituloSecao>
+          {fraquezaOuAmeaca.map((p, i) => (
+            <p key={i} className="text-sm sm:text-base">{p}</p>
+          ))}
+        </section>
+      )}
+
+      {mostrarFraqueza && isForca && transformarEmOportunidade.length > 0 && (
+        <section className="space-y-3 rounded-xl border border-orange-100 bg-orange-50/40 p-4">
+          <TituloSecao>{TITULOS_FORCA.transformarEmOportunidade}</TituloSecao>
+          <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
+            {transformarEmOportunidade.map((texto, i) => (
+              <li key={i}>{texto}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {mostrarFraqueza && !isForca && atrapalhar.length > 0 && (
+        <section className="space-y-3 rounded-xl border border-orange-100 bg-orange-50/40 p-4">
+          <TituloSecao>{TITULOS_FO.comoAtrapalhar}</TituloSecao>
+          <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
+            {atrapalhar.map((texto, i) => (
+              <li key={i}>{texto}</li>
+            ))}
+          </ul>
         </section>
       )}
 
       {dicas.length > 0 && (
-        <section className="space-y-3 rounded-xl border border-violet-100 bg-violet-50/40 p-4 scroll-mt-4">
-          <h4 className="font-semibold text-gray-900">Dicas para reduzir o impacto ou usar como força</h4>
-          <ListaComVerMais itens={dicas} expandido={verDicas} onToggle={() => setVerDicas((v) => !v)} />
+        <section id={secoes.dicas} className="space-y-3 rounded-xl border border-violet-100 bg-violet-50/40 p-4 scroll-mt-4">
+          <TituloSecao>{TITULOS_FO.dicas}</TituloSecao>
+          <ListaComVerMais
+            itens={dicas}
+            expandido={verDicas}
+            onToggle={() => setVerDicas((v) => !v)}
+            rotulos={ROTULOS_VER_MAIS_FO.dicas}
+          />
+        </section>
+      )}
+
+      {((isForca && mostrarExemplosForca) || !isForca) && exemplosPraticos.length > 0 && (
+        <section id={secoes.exemplos} className="space-y-3 rounded-xl border border-violet-100 bg-violet-50/40 p-4 scroll-mt-4">
+          <TituloSecao>{isForca ? TITULOS_FORCA.exemplosPraticos : TITULOS_FO.exemplos}</TituloSecao>
+          <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
+            {exemplosPraticos.map((texto, i) => (
+              <li key={i}>{texto}</li>
+            ))}
+          </ul>
         </section>
       )}
     </>
@@ -317,16 +304,18 @@ function ConteudoOportunidade({ detalhe }) {
 }
 
 function ConteudoForca({ detalhe }) {
-  const [verUsar, setVerUsar] = useState(false);
-
-  const usar = (detalhe.comoUsar || []);
+  const usar = montarComoUsar(detalhe);
 
   return (
     <>
       {usar.length > 0 && (
         <section className="space-y-3 rounded-xl border border-green-100 bg-green-50/40 p-4 scroll-mt-4">
-          <h4 className="font-semibold text-gray-900">Como essa força pode ser usada</h4>
-          <ListaComVerMais itens={usar} expandido={verUsar} onToggle={() => setVerUsar((v) => !v)} />
+          <TituloSecao>{TITULOS_FORCA.comoUsar}</TituloSecao>
+          <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
+            {usar.map((texto, i) => (
+              <li key={i}>{texto}</li>
+            ))}
+          </ul>
         </section>
       )}
     </>
@@ -344,10 +333,27 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
   const [reflexoes,    setReflexoes]    = useState({});
   const [tocados,      setTocados]      = useState({});
   const [salvando,     setSalvando]     = useState(false);
+  const [exemplosVisivel, setExemplosVisivel] = useState(false);
 
-  const secoesRef = useRef({ atrapalhar: 'secao-atrapalhar', dicas: 'secao-dicas', exemplos: 'secao-exemplos' });
+  const secoesRef = useRef({
+    atrapalhar: 'secao-atrapalhar',
+    dicas: 'secao-dicas',
+    exemplos: 'secao-exemplos',
+    dicasOportunidade: 'secao-dicas-oportunidade',
+    exemplosOportunidade: 'secao-exemplos-oportunidade',
+    dicasFo: 'secao-dicas-fo',
+    exemplosFo: 'secao-exemplos-praticos-fo',
+  });
+  const tracoSeed = tracoInfo ? hashTraco(tracoInfo.tipo, tracoInfo.numeroTraco) : 0;
+  const quadrante = tracoInfo?.quadrante;
+  const isFo = tracoInfo?.tipo === 'FO';
+  const isF = tracoInfo?.tipo === 'F';
+  const isShCh = tracoInfo?.tipo === 'SH' || tracoInfo?.tipo === 'CH';
+  const isAmeacaFraquezaShCh = isShCh && (quadrante === 'ameaca' || quadrante === 'fraqueza');
+  const isOportunidade = quadrante === 'oportunidade';
 
-  const questoes = tracoInfo ? (QUESTOES_POR_QUADRANTE[tracoInfo.quadrante] || []) : [];
+  const questoes = tracoInfo ? questoesDoQuadrante(quadrante) : [];
+  const introExercicio = tracoInfo ? introExercicios(quadrante) : null;
 
   // Carrega detalhe e reflexões ao abrir
   useEffect(() => {
@@ -357,17 +363,22 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
     setErro(null);
     setErroSalvar(null);
     setSalvoCom(false);
+    setExemplosVisivel(false);
     setCarregando(true);
 
     const { tipo, numeroTraco, quadrante } = tracoInfo;
 
     Promise.all([
-      api.get(`/traco-detalhe/${tipo}/${numeroTraco}`).catch(() => null),
+      tipo === 'SH'
+        ? api.get(`/relatorio-sh/${numeroTraco}`).catch(() => null)
+        : tipo === 'CH'
+          ? api.get(`/relatorio-ch/${numeroTraco}`).catch(() => null)
+          : api.get(`/traco-detalhe/${tipo}/${numeroTraco}`).catch(() => null),
       api.get(`/reflexao-traco/${tipo}/${numeroTraco}/${quadrante}`).catch(() => null),
     ]).then(([resDetalhe, resReflexao]) => {
       setDetalhe(resDetalhe?.data ?? null);
       const respostas = resReflexao?.data?.respostas ?? {};
-      const qs = QUESTOES_POR_QUADRANTE[quadrante] || [];
+      const qs = questoesDoQuadrante(quadrante);
       setReflexoes(Object.fromEntries(qs.map(({ id }) => [id, respostas[id] ?? ''])));
       setTocados(tocadoInicial(qs));
     }).finally(() => setCarregando(false));
@@ -376,6 +387,11 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
   const scrollTo = useCallback((id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
+
+  const mostrarExemplos = useCallback(() => {
+    setExemplosVisivel(true);
+    setTimeout(() => scrollTo('secao-exemplos'), 50);
+  }, [scrollTo]);
 
   if (!isOpen || !tracoInfo) return null;
 
@@ -456,43 +472,67 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
 
           {!carregando && detalhe && (
             <>
-              {/* O que é */}
-              {(detalhe.oQueE || []).length > 0 && (
-                <section className="space-y-3">
-                  <h4 className="font-semibold text-gray-900">O que é</h4>
-                  {detalhe.oQueE.map((p, i) => (
-                    <p key={i} className="text-sm sm:text-base">{p}</p>
-                  ))}
-                </section>
-              )}
+              {/* Momento 1 — Detalhes do traço (conteúdo dinâmico do relatório) */}
+              <section aria-label="Detalhes do traço" className="space-y-5">
+                {(detalhe.oQueE || []).length > 0 && (
+                  <div className="space-y-3">
+                    {(isFo || isF) ? (
+                      <TituloSecao>{TITULOS_FO.oQueE}</TituloSecao>
+                    ) : (
+                      <h4 className="font-semibold text-gray-900">O que é</h4>
+                    )}
+                    {detalhe.oQueE.map((p, i) => (
+                      <p key={i} className="text-sm sm:text-base">{p}</p>
+                    ))}
+                  </div>
+                )}
 
-              {/* Seções específicas por quadrante */}
-              {(tracoInfo.quadrante === 'ameaca' || tracoInfo.quadrante === 'fraqueza') && (
-                <ConteudoAmeacaFraqueza detalhe={detalhe} secoes={secoesRef.current} />
-              )}
-              {tracoInfo.quadrante === 'oportunidade' && (
-                <ConteudoOportunidade detalhe={detalhe} />
-              )}
-              {tracoInfo.quadrante === 'forca' && (
-                <ConteudoForca detalhe={detalhe} />
-              )}
+                {isF && (
+                  <ConteudoForca detalhe={detalhe} />
+                )}
 
-              {/* Questões reflexivas */}
-              {questoes.length > 0 && (
-                <section id="secao-questoes-reflexivas" className="space-y-6 pt-6 mt-2 border-t-2 border-violet-200">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">Questões reflexivas</h3>
-                  <p className="text-sm sm:text-base text-gray-800">
-                    Responda as questões abaixo para descobrir como esse traço impacta sua vida e o que pode ser feito.
-                  </p>
+                {(isFo || (isF && quadrante !== 'forca')) && (
+                  <ConteudoFo
+                    detalhe={detalhe}
+                    quadrante={quadrante}
+                    tipoTraco={tracoInfo.tipo}
+                    secoes={{
+                      dicas: secoesRef.current.dicasFo,
+                      exemplos: secoesRef.current.exemplosFo,
+                    }}
+                  />
+                )}
 
-                  <div className="space-y-6 text-sm sm:text-base">
+                {isAmeacaFraquezaShCh && (
+                  <ConteudoAmeacaFraqueza
+                    detalhe={detalhe}
+                    secoes={secoesRef.current}
+                    tracoSeed={tracoSeed}
+                    exemplosVisivel={exemplosVisivel}
+                  />
+                )}
+              </section>
+
+              {/* Momento 2 — Exercícios (fixo; sem perguntas em Forças) */}
+              {questoes.length > 0 && introExercicio && (
+                <section
+                  id="secao-exercicios"
+                  aria-label="Exercícios de autoconhecimento"
+                  className="space-y-6 pt-8 mt-4 border-t-2 border-violet-200"
+                >
+                  <div className="space-y-2">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900">{TITULO_EXERCICIOS}</h3>
+                    <p className="text-sm sm:text-base text-gray-800">{introExercicio}</p>
+                  </div>
+
+                  <div id="secao-questoes-reflexivas" className="space-y-6 text-sm sm:text-base">
                     {questoes.map(({ id, min, texto }, idx) => (
                       <div key={id} className="space-y-3">
                         <p>
                           <span className="font-semibold text-gray-900">{idx + 1})</span> {texto}
                         </p>
 
-                        {id === 'q3' && tracoInfo.quadrante !== 'oportunidade' && (
+                        {id === 'q3' && isAmeacaFraquezaShCh && (
                           <>
                             <p className="text-gray-800">Pergunte a si:</p>
                             <ul className="list-disc pl-5 space-y-1 text-gray-800">
@@ -500,30 +540,107 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
                               <li>Existe alguma rotina, estratégia ou ferramenta que posso usar?</li>
                               <li>Posso tentar prever situações em que esse traço aparece e me preparar antes?</li>
                             </ul>
+                            <p className="text-gray-800">
+                              Essas ações são chamadas de estratégias de enfrentamento. Podem incluir: fazer listas,
+                              dividir tarefas, ensaiar conversas, praticar pausas, avisar sobre dificuldades, mudar o
+                              ambiente, criar lembretes, pedir ajuda antes da crise, etc.
+                            </p>
                             <p>
-                              Para ver exemplos,{' '}
-                              <button type="button" onClick={() => scrollTo('secao-dicas')}
-                                className="font-semibold text-violet-700 underline">
-                                clique aqui para ver dicas práticas
-                              </button>.
+                              Para ver alguns exemplos, na seção &quot;Dicas práticas&quot; clique no botão{' '}
+                              <button
+                                type="button"
+                                onClick={() => scrollTo('secao-dicas')}
+                                className="font-semibold text-violet-700 underline"
+                              >
+                                Clique aqui para visualizar mais dicas práticas
+                              </button>{' '}
+                              e veja se alguma delas pode servir para você, mesmo que seja necessário modificá-la de
+                              alguma forma.
                             </p>
                           </>
                         )}
 
-                        {id === 'q5' && tracoInfo.quadrante !== 'oportunidade' && (
+                        {id === 'q4' && isAmeacaFraquezaShCh && (
+                          <p>
+                            Verifique no botão{' '}
+                            <button
+                              type="button"
+                              onClick={() => scrollTo('secao-atrapalhar')}
+                              className="font-semibold text-violet-700 underline"
+                            >
+                              Veja aqui mais exemplos
+                            </button>{' '}
+                            da seção &quot;Como esse traço pode atrapalhar&quot; exemplos de como o traço pode atrapalhar
+                            em diversas situações. Selecione os exemplos nos quais você se identifique para responder
+                            essa questão.
+                          </p>
+                        )}
+
+                        {id === 'q5' && isFo && isOportunidade && (
+                          <p>
+                            Para ver mais exemplos, clique nos botões{' '}
+                            <button
+                              type="button"
+                              onClick={() => scrollTo('secao-dicas-fo')}
+                              className="font-semibold text-violet-700 underline"
+                            >
+                              Dicas para reduzir o impacto negativo desse traço ou usá-lo como uma força
+                            </button>{' '}
+                            e{' '}
+                            <button
+                              type="button"
+                              onClick={() => scrollTo('secao-exemplos-praticos-fo')}
+                              className="font-semibold text-violet-700 underline"
+                            >
+                              Exemplos práticos
+                            </button>
+                            .
+                          </p>
+                        )}
+
+                        {id === 'q5' && isF && isOportunidade && (
+                          <p>
+                            Para ver mais exemplos, clique no botão{' '}
+                            <button
+                              type="button"
+                              onClick={() => scrollTo('secao-exemplos-praticos-fo')}
+                              className="font-semibold text-violet-700 underline"
+                            >
+                              Exemplos práticos
+                            </button>
+                            .
+                          </p>
+                        )}
+
+                        {id === 'q5' && isAmeacaFraquezaShCh && (
                           <>
+                            <p className="text-gray-800">
+                              A necessidade específica de apoio e suporte é o que você realmente precisa que esteja
+                              disponível ou acessível para funcionar bem.
+                            </p>
                             <p className="text-gray-800">Por exemplo:</p>
                             <ul className="list-disc pl-5 space-y-1 text-gray-800">
                               <li>Ter alguém que acompanhe meu progresso com frequência</li>
                               <li>Ter prazos intermediários em vez de um só</li>
                               <li>Ter apoio na organização do tempo ou das ideias</li>
+                              <li>Ter um ambiente com menos estímulos sensoriais</li>
+                              <li>
+                                Fazer negociações com familiares, amigos ou parceiros românticos, para ajustar rotinas
+                                ou nível/forma de interações
+                              </li>
                             </ul>
-                            <p>
-                              Para ver exemplos,{' '}
-                              <button type="button" onClick={() => scrollTo('secao-exemplos')}
-                                className="font-semibold text-violet-700 underline">
-                                clique aqui para ver exemplos práticos
-                              </button>.
+                            <p className="text-gray-800">
+                              Observação: Essa necessidade vai além da ação: ela revela o tipo de suporte estrutural ou
+                              relacional que você precisa para evitar os impactos negativos desse traço. Para ver
+                              alguns exemplos, clique no botão{' '}
+                              <button
+                                type="button"
+                                onClick={mostrarExemplos}
+                                className="font-semibold text-violet-700 underline"
+                              >
+                                Clique aqui para visualizar exemplos práticos
+                              </button>
+                              .
                             </p>
                           </>
                         )}

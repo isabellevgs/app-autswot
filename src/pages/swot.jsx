@@ -7,6 +7,7 @@ import SwotLoading from '../components/swot/SwotLoading';
 import SwotError from '../components/swot/SwotError';
 import SwotGrid from '../components/swot/SwotGrid';
 import { gerarSwotPdf } from '../lib/swot-pdf';
+import { TRACOS_PARA_DESBLOQUEAR_PROXIMO } from '../constants/swotQuadrantes';
 
 const introP =
   'font-serif text-gray-900 text-base sm:text-lg leading-relaxed text-justify';
@@ -62,9 +63,11 @@ function Swot() {
             Você também visualizará perguntas de reflexão que devem ser respondidas. Depois de
             concluir a leitura você deverá responder perguntas de autoreflexao que poderão te ajudar
             a delinear suas necessidades especificas e estratégias de enfrentamento. Somente depois
-            de concluir o exercício dos traços de ameaças, o quadrante de fraquezas será
-            automaticamente aberto. A mesma dinâmica se repetirá nos quadrantes de oportunidades e,
-            por fim, de forças autísticas.
+            de concluir os exercícios de <strong>{TRACOS_PARA_DESBLOQUEAR_PROXIMO.ameaca} traços</strong> no
+            quadrante de ameaças, o quadrante de fraquezas será automaticamente aberto. Após responder{' '}
+            <strong>{TRACOS_PARA_DESBLOQUEAR_PROXIMO.fraqueza} traços</strong> em fraquezas, abre o de oportunidades; e
+            após <strong>{TRACOS_PARA_DESBLOQUEAR_PROXIMO.oportunidade} traços</strong> em oportunidades, abre o de
+            forças autísticas.
           </p>
           <p className={introP}>
             Em cada quadrante, você encontrará perguntas que o(a) convidam a refletir profundamente

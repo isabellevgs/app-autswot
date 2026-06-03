@@ -5,12 +5,7 @@
 export function podeAvançarPergunta(perguntaAtualData, resposta, frequencia, intensidade, perguntaTemIntensidade) {
   if (!perguntaAtualData) return false;
 
-  // Perguntas FO e F só precisam de frequência
-  if (perguntaAtualData.tipo === 'FO' || perguntaAtualData.tipo === 'F') {
-    return !!frequencia;
-  }
-
-  // Outras perguntas precisam de resposta
+  // Todas as perguntas precisam de resposta sim/não
   if (!resposta) return false;
 
   // Se resposta é "não", pode avançar
