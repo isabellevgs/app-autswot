@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthLayout, Input, PasswordInput, Button } from '../components';
+import ModalRedefinirSenhaLogin from '../components/ui/modalRedefinirSenhaLogin';
 
 function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [modalRedefinirSenha, setModalRedefinirSenha] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     senha: ''
@@ -55,6 +57,16 @@ function Login() {
           autoComplete="current-password"
         />
 
+        <div className="text-right -mt-2">
+          <button
+            type="button"
+            onClick={() => setModalRedefinirSenha(true)}
+            className="text-sm text-violet-700 hover:text-violet-800 underline font-semibold transition-colors"
+          >
+            Redefinir senha
+          </button>
+        </div>
+
         {/* Botão Entrar */}
         <Button type="submit" fullWidth size="lg" className="uppercase">
           Entrar
@@ -71,6 +83,11 @@ function Login() {
           Criar conta
         </Link>
       </div>
+
+      <ModalRedefinirSenhaLogin
+        isOpen={modalRedefinirSenha}
+        onClose={() => setModalRedefinirSenha(false)}
+      />
     </AuthLayout>
   );
 }

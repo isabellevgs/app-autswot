@@ -332,7 +332,7 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
   const [salvoCom,     setSalvoCom]     = useState(false);
   const [reflexoes,    setReflexoes]    = useState({});
   const [tocados,      setTocados]      = useState({});
-  const [salvando,     setSalvando]     = useState(false);
+  const [salvandoComo, setSalvandoComo] = useState(null); // 'rascunho' | 'envio' | null
   const [exemplosVisivel, setExemplosVisivel] = useState(false);
 
   const secoesRef = useRef({
@@ -363,6 +363,7 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
     setErro(null);
     setErroSalvar(null);
     setSalvoCom(false);
+    setSalvandoComo(null);
     setExemplosVisivel(false);
     setCarregando(true);
 
@@ -404,6 +405,27 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
     return tocados[id] || (reflexoes[id] ?? '').trim().length > 0;
   };
 
+  const payloadReflexao = () => ({
+    tipo:        tracoInfo.tipo,
+    numeroTraco: tracoInfo.numeroTraco,
+    quadrante:   tracoInfo.quadrante,
+    respostas:   reflexoes,
+  });
+
+  const handleSalvarRascunho = async () => {
+    setSalvandoComo('rascunho');
+    setErroSalvar(null);
+    try {
+      await api.post('/reflexao-traco', { ...payloadReflexao(), enviado: false });
+      (onSalvo ?? onClose)();
+    } catch (err) {
+      console.error('[SwotTracoModal] Erro ao salvar rascunho:', err?.response?.data ?? err?.message ?? err);
+      setErroSalvar('Não foi possível salvar. Verifique sua conexão e tente novamente.');
+    } finally {
+      setSalvandoComo(null);
+    }
+  };
+
   const handleSalvar = async () => {
     if (questoes.length && !reflexoesSaoValidas(reflexoes, questoes)) {
       setTocados(Object.fromEntries(questoes.map(({ id }) => [id, true])));
@@ -411,22 +433,17 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
       return;
     }
 
-    setSalvando(true);
+    setSalvandoComo('envio');
     setErroSalvar(null);
     try {
-      await api.post('/reflexao-traco', {
-        tipo:        tracoInfo.tipo,
-        numeroTraco: tracoInfo.numeroTraco,
-        quadrante:   tracoInfo.quadrante,
-        respostas:   reflexoes,
-      });
+      await api.post('/reflexao-traco', { ...payloadReflexao(), enviado: true });
       setSalvoCom(true);
       setTimeout(() => (onSalvo ?? onClose)(), 800);
     } catch (err) {
       console.error('[SwotTracoModal] Erro ao salvar reflexão:', err?.response?.data ?? err?.message ?? err);
       setErroSalvar('Não foi possível salvar. Verifique sua conexão e tente novamente.');
     } finally {
-      setSalvando(false);
+      setSalvandoComo(null);
     }
   };
 
@@ -679,14 +696,24 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
               Fechar
             </button>
             {questoes.length > 0 && (
-              <button
-                type="button"
-                onClick={handleSalvar}
-                disabled={salvando || salvoCom}
-                className="px-6 py-2.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 font-semibold transition-colors disabled:opacity-60"
-              >
-                {salvando ? 'Salvando…' : salvoCom ? 'Salvo!' : 'Salvar respostas'}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleSalvarRascunho}
+                  disabled={!!salvandoComo || salvoCom}
+                  className="px-6 py-2.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 font-semibold transition-colors disabled:opacity-60"
+                >
+                  {salvandoComo === 'rascunho' ? 'Salvando…' : 'Salvar sem enviar'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSalvar}
+                  disabled={!!salvandoComo || salvoCom}
+                  className="px-6 py-2.5 rounded-lg bg-green-600 text-white hover:bg-green-700 font-semibold transition-colors disabled:opacity-60"
+                >
+                  {salvandoComo === 'envio' ? 'Enviando…' : salvoCom ? 'Enviado!' : 'Enviar as respostas'}
+                </button>
+              </>
             )}
           </div>
         </div>

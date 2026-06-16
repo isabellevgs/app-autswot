@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { transformarDadosSwot } from '../utils/swotUtils';
+import { mapaStatusReflexoes } from '../utils/reflexaoTracoStatus';
 import { SWOT_MODULOS } from '../constants/swotConfig';
 
 const dadosVazios = () =>
@@ -17,6 +18,7 @@ export function useSwot() {
   const [error,      setError]      = useState(null);
   const [dadosSwot,  setDadosSwot]  = useState(dadosVazios);
   const [progresso,  setProgresso]  = useState(null);
+  const [statusReflexoes, setStatusReflexoes] = useState({});
 
   const buscarProgresso = useCallback(async () => {
     try {
@@ -27,6 +29,19 @@ export function useSwot() {
     }
   }, []);
 
+  const buscarStatusReflexoes = useCallback(async () => {
+    try {
+      const res = await api.get('/reflexao-traco');
+      setStatusReflexoes(mapaStatusReflexoes(res.data));
+    } catch {
+      setStatusReflexoes({});
+    }
+  }, []);
+
+  const refreshProgresso = useCallback(async () => {
+    await Promise.all([buscarProgresso(), buscarStatusReflexoes()]);
+  }, [buscarProgresso, buscarStatusReflexoes]);
+
   useEffect(() => {
     const buscarSwot = async () => {
       try {
@@ -36,6 +51,7 @@ export function useSwot() {
         const [swotRes] = await Promise.all([
           api.get('/questionario-resposta/swot'),
           buscarProgresso(),
+          buscarStatusReflexoes(),
         ]);
 
         const dadosTransformados = transformarDadosSwot(swotRes.data);
@@ -57,7 +73,7 @@ export function useSwot() {
     };
 
     buscarSwot();
-  }, [buscarProgresso]);
+  }, [buscarProgresso, buscarStatusReflexoes]);
 
-  return { dadosSwot, progresso, loading, error, refreshProgresso: buscarProgresso };
+  return { dadosSwot, progresso, statusReflexoes, loading, error, refreshProgresso };
 }

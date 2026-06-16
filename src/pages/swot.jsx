@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Download } from 'lucide-react';
 import { PageContainer, SectionHeader, ContentCard } from '../components';
 import Button from '../components/ui/Button';
@@ -7,23 +8,50 @@ import SwotLoading from '../components/swot/SwotLoading';
 import SwotError from '../components/swot/SwotError';
 import SwotGrid from '../components/swot/SwotGrid';
 import { gerarSwotPdf } from '../lib/swot-pdf';
-import { TRACOS_PARA_DESBLOQUEAR_PROXIMO } from '../constants/swotQuadrantes';
+import { coletarDadosTracosParaPdf } from '../lib/coletar-dados-tracos-pdf';
+import {
+  SECAO_POR_QUADRANTE,
+  TRACOS_PARA_DESBLOQUEAR_PROXIMO,
+  tracosNecessariosParaDesbloquearProximo,
+} from '../constants/swotQuadrantes';
 
 const introP =
   'font-serif text-gray-900 text-base sm:text-lg leading-relaxed text-justify';
 
+function necessariosParaProximo(quadrante, dadosSwot, progresso) {
+  if (progresso?.[quadrante]?.necessarios != null) {
+    return progresso[quadrante].necessarios;
+  }
+  const secao = SECAO_POR_QUADRANTE[quadrante];
+  const total = dadosSwot?.[secao]?.items?.length ?? 0;
+  return tracosNecessariosParaDesbloquearProximo(quadrante, total);
+}
+
 function Swot() {
   const { user } = useAuth();
-  const { dadosSwot, progresso, loading, error, refreshProgresso } = useSwot();
+  const { dadosSwot, progresso, statusReflexoes, loading, error, refreshProgresso } = useSwot();
+  const [gerandoPdf, setGerandoPdf] = useState(false);
 
   const totalItens = Object.values(dadosSwot).reduce(
     (acc, modulo) => acc + (modulo.items?.length || 0),
     0,
   );
 
-  const handleBaixarPdf = () => {
-    if (totalItens === 0) return;
-    gerarSwotPdf(user?.name || 'Usuário', dadosSwot);
+  const reqAmeaca = necessariosParaProximo('ameaca', dadosSwot, progresso);
+  const reqFraqueza = necessariosParaProximo('fraqueza', dadosSwot, progresso);
+  const reqOportunidade = necessariosParaProximo('oportunidade', dadosSwot, progresso);
+
+  const handleBaixarPdf = async () => {
+    if (totalItens === 0 || gerandoPdf) return;
+    setGerandoPdf(true);
+    try {
+      const tracosDetalhados = await coletarDadosTracosParaPdf(dadosSwot);
+      gerarSwotPdf(user?.name || 'Usuário', dadosSwot, tracosDetalhados);
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err);
+    } finally {
+      setGerandoPdf(false);
+    }
   };
 
   if (loading) {
@@ -61,13 +89,20 @@ function Swot() {
           </p>
           <p className={introP}>
             Você também visualizará perguntas de reflexão que devem ser respondidas. Depois de
-            concluir a leitura você deverá responder perguntas de autoreflexao que poderão te ajudar
-            a delinear suas necessidades especificas e estratégias de enfrentamento. Somente depois
-            de concluir os exercícios de <strong>{TRACOS_PARA_DESBLOQUEAR_PROXIMO.ameaca} traços</strong> no
-            quadrante de ameaças, o quadrante de fraquezas será automaticamente aberto. Após responder{' '}
-            <strong>{TRACOS_PARA_DESBLOQUEAR_PROXIMO.fraqueza} traços</strong> em fraquezas, abre o de oportunidades; e
-            após <strong>{TRACOS_PARA_DESBLOQUEAR_PROXIMO.oportunidade} traços</strong> em oportunidades, abre o de
-            forças autísticas.
+            concluir a leitura você deverá responder perguntas de autoreflexão que poderão te ajudar
+            a delinear suas necessidades específicas e estratégias de enfrentamento. Para abrir cada
+            quadrante seguinte, é necessário <strong>enviar</strong> as respostas dos exercícios no
+            quadrante anterior — no máximo{' '}
+            <strong>{TRACOS_PARA_DESBLOQUEAR_PROXIMO.ameaca} traços</strong> em ameaças,{' '}
+            <strong>{TRACOS_PARA_DESBLOQUEAR_PROXIMO.fraqueza} traços</strong> em fraquezas e{' '}
+            <strong>{TRACOS_PARA_DESBLOQUEAR_PROXIMO.oportunidade} traços</strong> em oportunidades.
+            Se você tiver <strong>menos traços classificados</strong> do que esse número, basta enviar
+            as respostas de <strong>todos</strong> eles; se o quadrante anterior estiver vazio, o
+            próximo já fica disponível. Com a sua SWOT atual, a exigência é de{' '}
+            <strong>{reqAmeaca} traço{reqAmeaca !== 1 ? 's' : ''}</strong> em ameaças,{' '}
+            <strong>{reqFraqueza} traço{reqFraqueza !== 1 ? 's' : ''}</strong> em fraquezas e{' '}
+            <strong>{reqOportunidade} traço{reqOportunidade !== 1 ? 's' : ''}</strong> em oportunidades.
+            Rascunhos salvos sem envio não contam para o desbloqueio.
           </p>
           <p className={introP}>
             Em cada quadrante, você encontrará perguntas que o(a) convidam a refletir profundamente
@@ -97,17 +132,18 @@ function Swot() {
           <SwotGrid
             dadosSwot={dadosSwot}
             progresso={progresso}
+            statusPorTraco={statusReflexoes}
             onProgressoChange={refreshProgresso}
           />
 
           <div className="flex justify-center pt-2">
             <Button
               onClick={handleBaixarPdf}
-              disabled={totalItens === 0}
+              disabled={totalItens === 0 || gerandoPdf}
               className="inline-flex items-center gap-2"
             >
               <Download className="w-5 h-5" />
-              BAIXAR EM PDF
+              {gerandoPdf ? 'GERANDO PDF…' : 'BAIXAR EM PDF'}
             </Button>
           </div>
         </div>

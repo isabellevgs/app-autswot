@@ -3,8 +3,8 @@
  * Separado da configuração editorial dos relatórios por traço.
  */
 
-/** Temporário: false = todos os quadrantes abertos. Reativar após ajustes. */
-export const DESBLOQUEIO_SEQUENCIAL_ATIVO = false;
+/** true = desbloqueio sequencial obrigatório (ameaças → fraquezas → oportunidades → forças). */
+export const DESBLOQUEIO_SEQUENCIAL_ATIVO = true;
 
 /** Chaves usadas na API e no banco (singular). */
 export const QUADRANTES_ORDEM = ['ameaca', 'fraqueza', 'oportunidade', 'forca'];
@@ -51,18 +51,44 @@ export const TRACOS_PARA_DESBLOQUEAR_PROXIMO = {
   forca: 0,
 };
 
-export function quadranteEstaDesbloqueado(quadrante, concluidosPorQuadrante = {}) {
+export function tracosNecessariosParaDesbloquear(quadrante, totalTracosQuadranteAnterior = 0) {
+  const configurado = TRACOS_PARA_DESBLOQUEAR[quadrante] ?? 0;
+  if (!QUADRANTE_ANTERIOR[quadrante]) return 0;
+  if (totalTracosQuadranteAnterior <= 0) return 0;
+  return Math.min(configurado, totalTracosQuadranteAnterior);
+}
+
+export function tracosNecessariosParaDesbloquearProximo(quadrante, totalTracosQuadrante = 0) {
+  const configurado = TRACOS_PARA_DESBLOQUEAR_PROXIMO[quadrante] ?? 0;
+  if (configurado === 0) return 0;
+  if (totalTracosQuadrante <= 0) return 0;
+  return Math.min(configurado, totalTracosQuadrante);
+}
+
+export function quadranteEstaDesbloqueado(
+  quadrante,
+  concluidosPorQuadrante = {},
+  totalTracosPorQuadrante = {},
+) {
   if (!DESBLOQUEIO_SEQUENCIAL_ATIVO) return true;
   const anterior = QUADRANTE_ANTERIOR[quadrante];
   if (!anterior) return true;
-  const necessarios = TRACOS_PARA_DESBLOQUEAR[quadrante] ?? 0;
+  const totalAnterior = totalTracosPorQuadrante[anterior] ?? 0;
+  const necessarios = tracosNecessariosParaDesbloquear(quadrante, totalAnterior);
+  if (necessarios === 0) return true;
   return (concluidosPorQuadrante[anterior] ?? 0) >= necessarios;
 }
 
-export function tracosFaltandoParaDesbloquear(quadrante, concluidosPorQuadrante = {}) {
+export function tracosFaltandoParaDesbloquear(
+  quadrante,
+  concluidosPorQuadrante = {},
+  totalTracosPorQuadrante = {},
+) {
   const anterior = QUADRANTE_ANTERIOR[quadrante];
   if (!anterior) return 0;
-  const necessarios = TRACOS_PARA_DESBLOQUEAR[quadrante] ?? 0;
+  const totalAnterior = totalTracosPorQuadrante[anterior] ?? 0;
+  const necessarios = tracosNecessariosParaDesbloquear(quadrante, totalAnterior);
+  if (necessarios === 0) return 0;
   return Math.max(0, necessarios - (concluidosPorQuadrante[anterior] ?? 0));
 }
 
