@@ -26,8 +26,13 @@ function ChangePasswordForm({ onCancel }) {
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      setPasswordError('A nova senha deve ter pelo menos 6 caracteres');
+    if (passwordData.newPassword.length < 8) {
+      setPasswordError('A nova senha deve ter pelo menos 8 caracteres');
+      return;
+    }
+
+    if (passwordData.newPassword.length > 100) {
+      setPasswordError('A nova senha deve ter no máximo 100 caracteres');
       return;
     }
 
@@ -46,17 +51,7 @@ function ChangePasswordForm({ onCancel }) {
       alert('Senha alterada com sucesso!');
     } catch (error) {
       console.error('Erro ao alterar senha:', error);
-      let errorMessage = 'Erro ao alterar senha. Verifique a senha atual.';
-      
-      if (error.response?.data) {
-        errorMessage = error.response.data.message || 
-                      error.response.data.error || 
-                      'Erro ao alterar senha. Verifique a senha atual.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      setPasswordError(errorMessage);
+      setPasswordError(error.message || 'Erro ao alterar senha. Verifique a senha atual.');
     } finally {
       setIsSavingPassword(false);
     }

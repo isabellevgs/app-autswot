@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Frequencia from './frequencia';
 import Intensidade from './intensidade';
 import RespostaSimNao from '../shared/RespostaSimNao';
@@ -6,6 +5,7 @@ import ExplicacaoCard from '../shared/ExplicacaoCard';
 
 function CartPerguntaSH({ 
   pergunta, 
+  perguntaId = '',
   resposta, 
   onRespostaChange, 
   mostrarFrequencia = false,
@@ -37,6 +37,7 @@ function CartPerguntaSH({
           frequencia={frequencia}
           onFrequenciaChange={onFrequenciaChange}
           tipo="SH"
+          perguntaId={perguntaId}
         />
       )}
 

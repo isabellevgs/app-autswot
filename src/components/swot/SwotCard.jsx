@@ -1,6 +1,6 @@
 import TracoReflexaoStatus, { obterStatusTraco } from './TracoReflexaoStatus';
 
-function SwotCard({ titulo, Icon, items, isExpandido, isBloqueado, onClick, gradient, descricao, onItemClick, statusPorTraco }) {
+function SwotCard({ titulo, Icon, items, isExpandido, isBloqueado, onClick, gradient, descricao, progressoTexto, onItemClick, statusPorTraco }) {
   const gradientClasses = {
     red: 'bg-gradient-to-r from-red-500 to-red-600',
     orange: 'bg-gradient-to-r from-yellow-500 to-orange-500',
@@ -33,7 +33,12 @@ function SwotCard({ titulo, Icon, items, isExpandido, isBloqueado, onClick, grad
       
       <div className="flex items-center gap-3 mb-4">
         <Icon className="w-6 h-6 text-white" />
-        <h2 className="text-white font-bold text-xl sm:text-2xl">{titulo}</h2>
+        <h2 className="text-white font-bold text-xl sm:text-2xl flex-1">{titulo}</h2>
+        {progressoTexto && !isBloqueado && (
+          <span className="bg-black/25 text-white text-xs font-semibold px-2.5 py-1 rounded-full shrink-0">
+            {progressoTexto}
+          </span>
+        )}
       </div>
       
       {isExpandido ? (
@@ -43,8 +48,8 @@ function SwotCard({ titulo, Icon, items, isExpandido, isBloqueado, onClick, grad
           </p>
         ) : (
           <ul className="space-y-3 mt-4 text-white">
-            {items.map((item, index) => (
-              <li key={index}>
+            {items.map((item) => (
+              <li key={`${item.tipo}-${item.numeroTraco}-${item.quadrante}`}>
                 <button
                   type="button"
                   onClick={(event) => {

@@ -1,8 +1,10 @@
-import { createContext, useState, useContext, useEffect } from "react";
+import { createContext, useState, useContext, useEffect, useCallback } from "react";
 import * as authService from "../services/authService";
-import api from "../services/api";
+import {
+  AUTH_SESSION_EXPIRED,
+  AUTH_SESSION_EXPIRED_KEY,
+} from "../utils/auth-events";
 
-// Valor padrão do contexto
 const defaultContextValue = {
   user: null,
   login: async () => {
@@ -21,59 +23,95 @@ const defaultContextValue = {
   },
   loading: true,
   signed: false,
+  sessionDegraded: false,
 };
 
-// Cria o contexto de autenticação
 const AuthContext = createContext(defaultContextValue);
 
-// Provider que envolve a aplicação
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionDegraded, setSessionDegraded] = useState(false);
+
+  const logout = useCallback(() => {
+    authService.logout();
+    setUser(null);
+    setSessionDegraded(false);
+  }, []);
 
   useEffect(() => {
-    // Verifica se há um token salvo ao carregar a aplicação
     const loadUser = async () => {
       const token = authService.getToken();
       if (token) {
         try {
-          // Busca os dados do usuário da API
           const userData = await authService.getCurrentUser();
-          
-          // Normalizar o role para garantir consistência
           const normalizedUser = {
             ...userData,
             role: userData.role ? String(userData.role).toUpperCase() : 'USER',
           };
-          
           setUser(normalizedUser);
+          setSessionDegraded(false);
         } catch (error) {
           console.error("Erro ao carregar usuário:", error);
-          // Se der erro, limpa o token inválido
-          authService.logout();
+          const status = error?.response?.status;
+          const isNetwork =
+            !error?.response &&
+            (error?.code === 'ECONNREFUSED' ||
+              error?.code === 'ETIMEDOUT' ||
+              error?.code === 'ERR_NETWORK');
+
+          if (isNetwork || status >= 500) {
+            const cached = authService.getUser();
+            if (cached) {
+              setUser({
+                ...cached,
+                role: cached.role ? String(cached.role).toUpperCase() : 'USER',
+              });
+              setSessionDegraded(true);
+            }
+          } else if (status === 401 || status === 403) {
+            logout();
+          }
         }
       }
       setLoading(false);
     };
-    
-    loadUser();
-  }, []);
 
-  // Função de login
+    loadUser();
+  }, [logout]);
+
+  useEffect(() => {
+    const onStorage = (event) => {
+      if (event.key === authService.ACCESS_TOKEN_KEY && !event.newValue) {
+        logout();
+      }
+      if (event.key === authService.REFRESH_TOKEN_KEY && !event.newValue) {
+        logout();
+      }
+      if (event.key === AUTH_SESSION_EXPIRED_KEY && event.newValue) {
+        logout();
+      }
+    };
+
+    const onSessionExpired = () => logout();
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(AUTH_SESSION_EXPIRED, onSessionExpired);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(AUTH_SESSION_EXPIRED, onSessionExpired);
+    };
+  }, [logout]);
+
   const login = async (email, password) => {
     try {
-      // Chama a API de login
-      const { user, accessToken, refreshToken } = await authService.loginUser(email, password);
-      
-      // Normalizar o role para garantir consistência
+      const { user: loggedUser } = await authService.loginUser(email, password);
       const normalizedUser = {
-        ...user,
-        role: user.role ? String(user.role).toUpperCase() : 'USER',
+        ...loggedUser,
+        role: loggedUser.role ? String(loggedUser.role).toUpperCase() : 'USER',
       };
-      
-      // Salva o usuário no estado
       setUser(normalizedUser);
-
+      setSessionDegraded(false);
       return true;
     } catch (error) {
       console.error("Erro ao fazer login:", error);
@@ -81,24 +119,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Função de registro
   const register = async (registrationPayload) => {
     try {
-      const { user, accessToken, refreshToken } =
-        await authService.registerUser(registrationPayload);
-      
-      // Buscar dados atualizados do usuário do servidor para garantir que o role está normalizado
-      // Isso resolve o problema de permissão após registro
-      const userData = await authService.getCurrentUser();
-      
-      // Normalizar o role para garantir consistência
-      const normalizedUser = {
-        ...userData,
-        role: userData.role ? String(userData.role).toUpperCase() : 'USER',
-      };
-      
-      // Salva o usuário no estado
-      setUser(normalizedUser);
+      const { user } = await authService.registerUser(registrationPayload);
+
+      try {
+        const userData = await authService.getCurrentUser();
+        const normalizedUser = {
+          ...userData,
+          role: userData.role ? String(userData.role).toUpperCase() : 'USER',
+        };
+        setUser(normalizedUser);
+        setSessionDegraded(false);
+      } catch (profileError) {
+        console.warn('Registro concluído, mas falha ao sincronizar perfil:', profileError);
+        const normalizedUser = {
+          ...user,
+          role: user.role ? String(user.role).toUpperCase() : 'USER',
+        };
+        setUser(normalizedUser);
+      }
 
       return true;
     } catch (error) {
@@ -107,26 +147,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Função de logout
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-  };
-
-  // Função de atualizar perfil
   const updateUserProfile = async (data) => {
     try {
       const response = await authService.updateProfile(data);
-      // authService retorna { user }, então pegamos o user
       const updatedUser = response.user;
-      
-      // Normalizar o role para garantir consistência
       const normalizedUser = {
         ...updatedUser,
         role: updatedUser.role ? String(updatedUser.role).toUpperCase() : 'USER',
       };
-      
       setUser(normalizedUser);
+      setSessionDegraded(false);
       return normalizedUser;
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
@@ -142,6 +172,7 @@ export const AuthProvider = ({ children }) => {
     updateUserProfile,
     loading,
     signed: !!user,
+    sessionDegraded,
   };
 
   return (
@@ -151,15 +182,12 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Hook personalizado para usar o contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  
-  // Verificação adicional de segurança
+
   if (!context || typeof context.login !== 'function') {
     throw new Error("useAuth deve ser usado dentro de um AuthProvider. O contexto não foi inicializado corretamente.");
   }
-  
+
   return context;
 };
-

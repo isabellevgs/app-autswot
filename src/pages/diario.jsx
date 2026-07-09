@@ -1,248 +1,278 @@
-import { useState, useEffect } from 'react';
-import { DiarySidebar, DiaryContent } from '../components';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { extrairErroApi } from '../utils/api-errors';
+import DiarioJornadaSidebar from '../components/diary/DiarioJornadaSidebar';
+import DiarioJornadaPagina from '../components/diary/DiarioJornadaPagina';
+import DiarioAutoadvocaciaTimeline from '../components/diary/DiarioAutoadvocaciaTimeline';
+import DiarioAutoadvocaciaQuinzena from '../components/diary/DiarioAutoadvocaciaQuinzena';
+
+const ABAS = [
+  { id: 'jornada', label: 'Jornada SWOT' },
+  { id: 'autoadvocacia', label: 'Autoadvocacia' },
+];
 
 function Diario() {
   const { user } = useAuth();
-  const [entries, setEntries] = useState([]);
-  const [selectedEntry, setSelectedEntry] = useState(null);
-  const [perguntas, setPerguntas] = useState([]);
-  const [loadingPerguntas, setLoadingPerguntas] = useState(false);
-  const [loadingEntries, setLoadingEntries] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Carregar perguntas e entradas do usuário
-  useEffect(() => {
-    if (user?.id) {
-      loadPerguntas();
-      loadEntries();
+  const aba = searchParams.get('aba') === 'autoadvocacia' ? 'autoadvocacia' : 'jornada';
+  const paginaChave = searchParams.get('pagina');
+
+  const [paginas, setPaginas] = useState([]);
+  const [quinzenas, setQuinzenas] = useState([]);
+  const [paginaSelecionada, setPaginaSelecionada] = useState(null);
+  const [quinzenaSelecionada, setQuinzenaSelecionada] = useState(null);
+  const [loadingJornada, setLoadingJornada] = useState(false);
+  const [loadingAutoadvocacia, setLoadingAutoadvocacia] = useState(false);
+  const [savingJornada, setSavingJornada] = useState(false);
+  const [savingAutoadvocacia, setSavingAutoadvocacia] = useState(false);
+  const [creatingQuinzena, setCreatingQuinzena] = useState(false);
+  const [erro, setErro] = useState(null);
+  const [avisoPaginaBloqueada, setAvisoPaginaBloqueada] = useState(null);
+
+  const loadJornada = useCallback(async () => {
+    if (!user?.id) return [];
+    try {
+      setLoadingJornada(true);
+      setErro(null);
+      const res = await api.get('/diario/jornada/paginas');
+      const lista = res.data.paginas ?? [];
+      setPaginas(lista);
+      return lista;
+    } catch (err) {
+      setErro(extrairErroApi(err, 'Erro ao carregar o diário da jornada.'));
+      setPaginas([]);
+      return [];
+    } finally {
+      setLoadingJornada(false);
     }
   }, [user?.id]);
 
-  const loadPerguntas = async () => {
+  const loadAutoadvocacia = useCallback(async () => {
+    if (!user?.id) return [];
     try {
-      setLoadingPerguntas(true);
-      const response = await api.get(`/questions/user/${user.id}`);
-      // Filtrar apenas perguntas ativas e ordenar por ordem
-      const perguntasAtivas = (response.data.questions || [])
-        .filter(q => q.ativo !== false)
-        .sort((a, b) => a.ordem - b.ordem);
-      setPerguntas(perguntasAtivas);
+      setLoadingAutoadvocacia(true);
+      const res = await api.get('/diario/autoadvocacia/quinzenas');
+      const lista = res.data.quinzenas ?? [];
+      setQuinzenas(lista);
+      return lista;
     } catch (err) {
-      console.error('Erro ao carregar perguntas:', err);
-      setPerguntas([]);
+      setErro(extrairErroApi(err, 'Erro ao carregar o diário de autoadvocacia.'));
+      setQuinzenas([]);
+      return [];
     } finally {
-      setLoadingPerguntas(false);
+      setLoadingAutoadvocacia(false);
     }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadJornada();
+      loadAutoadvocacia();
+    }
+  }, [user?.id, loadJornada, loadAutoadvocacia]);
+
+  useEffect(() => {
+    setPaginaSelecionada(null);
+    setQuinzenaSelecionada(null);
+    setAvisoPaginaBloqueada(null);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!paginas.length) return;
+
+    if (paginaChave) {
+      const alvo = paginas.find((p) => p.chave === paginaChave);
+      if (alvo?.editavel) {
+        setPaginaSelecionada(alvo);
+        setAvisoPaginaBloqueada(null);
+      } else if (alvo) {
+        setPaginaSelecionada(null);
+        setAvisoPaginaBloqueada(
+          'Esta página ainda não está disponível. Complete o exercício correspondente na SWOT para desbloqueá-la.',
+        );
+      } else {
+        setPaginaSelecionada(null);
+        setAvisoPaginaBloqueada('Página não encontrada no seu diário.');
+      }
+      return;
+    }
+
+    const primeiraEditavel = paginas.find((p) => p.editavel);
+    if (primeiraEditavel) {
+      setPaginaSelecionada(primeiraEditavel);
+      setAvisoPaginaBloqueada(null);
+    }
+  }, [paginas, paginaChave]);
+
+  useEffect(() => {
+    if (!quinzenas.length) return;
+    const aindaValida = quinzenaSelecionada
+      && quinzenas.some((q) => q.numero === quinzenaSelecionada.numero);
+    if (!aindaValida) {
+      setQuinzenaSelecionada(quinzenas[0]);
+    }
+  }, [quinzenas, quinzenaSelecionada]);
+
+  useEffect(() => {
+    if (!paginaSelecionada?.chave || !paginas.length) return;
+    const atualizada = paginas.find((p) => p.chave === paginaSelecionada.chave);
+    if (
+      atualizada
+      && (
+        atualizada.updatedAt !== paginaSelecionada.updatedAt
+        || atualizada.texto !== paginaSelecionada.texto
+        || atualizada.concluida !== paginaSelecionada.concluida
+        || atualizada.editavel !== paginaSelecionada.editavel
+      )
+    ) {
+      setPaginaSelecionada(atualizada);
+    }
+  }, [paginas, paginaSelecionada]);
+
+  const trocarAba = (novaAba) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('aba', novaAba);
+    if (novaAba !== 'jornada') params.delete('pagina');
+    setSearchParams(params);
   };
 
-  const loadEntries = async () => {
-    if (!user?.id) return;
-    
+  const selecionarPagina = (pagina) => {
+    setPaginaSelecionada(pagina);
+    setAvisoPaginaBloqueada(null);
+    const params = new URLSearchParams(searchParams);
+    params.set('aba', 'jornada');
+    params.set('pagina', pagina.chave);
+    setSearchParams(params);
+  };
+
+  const salvarPagina = async (chave, texto, finalizar) => {
+    setSavingJornada(true);
     try {
-      setLoadingEntries(true);
-      const response = await api.get(`/diary/user/${user.id}`);
-      const loadedEntries = (response.data.entries || []).map(entry => {
-        const date = new Date(entry.date);
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        
-        // Converter respostas do formato da API para o formato local
-        const respostas = {};
-        if (entry.answers) {
-          entry.answers.forEach(answer => {
-            respostas[answer.questionId] = answer.texto || '';
-          });
-        }
-        
-        return {
-          id: entry.id,
-          date: date,
-          formattedDate: `${day}/${month}`,
-          respostas,
-        };
+      const res = await api.put(`/diario/jornada/paginas/${encodeURIComponent(chave)}`, {
+        texto,
+        finalizar,
       });
-      
-      // Ordenar por data (mais recente primeiro)
-      loadedEntries.sort((a, b) => b.date - a.date);
-      setEntries(loadedEntries);
+      const atualizada = res.data.pagina;
+      setPaginas((prev) => prev.map((p) => (p.chave === chave ? atualizada : p)));
+      setPaginaSelecionada(atualizada);
     } catch (err) {
-      console.error('Erro ao carregar entradas:', err);
-      setEntries([]);
+      throw new Error(extrairErroApi(err, 'Erro ao salvar reflexão.'));
     } finally {
-      setLoadingEntries(false);
+      setSavingJornada(false);
     }
   };
 
-  const handleCreateNew = async () => {
-    if (!user?.id) return;
-    
-    // Buscar perguntas antes de criar nova entrada
-    if (perguntas.length === 0) {
-      await loadPerguntas();
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalizar para início do dia
-    
+  const salvarQuinzena = async (numero, resposta1, resposta2, finalizar) => {
+    setSavingAutoadvocacia(true);
     try {
-      // Verificar se já existe entrada para hoje
-      const existingEntry = entries.find(e => {
-        const eDate = new Date(e.date);
-        eDate.setHours(0, 0, 0, 0);
-        return eDate.getTime() === today.getTime();
+      const res = await api.put(`/diario/autoadvocacia/quinzenas/${numero}`, {
+        resposta1,
+        resposta2,
+        finalizar,
       });
-
-      if (existingEntry) {
-        setSelectedEntry(existingEntry);
-        return;
-      }
-
-      // Criar objeto de respostas baseado nas perguntas
-      const respostas = {};
-      perguntas.forEach((pergunta) => {
-        respostas[pergunta.id] = '';
-      });
-
-      // Criar entrada na API
-      const response = await api.post('/diary', {
-        date: today.toISOString(),
-        answers: respostas,
-      });
-
-      const newEntry = {
-        id: response.data.entry.id,
-        date: new Date(response.data.entry.date),
-        formattedDate: `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}`,
-        respostas,
-      };
-
-      setEntries([newEntry, ...entries]);
-      setSelectedEntry(newEntry);
+      const atualizada = res.data.quinzena;
+      setQuinzenas((prev) => prev.map((q) => (q.numero === numero ? atualizada : q)));
+      setQuinzenaSelecionada(atualizada);
     } catch (err) {
-      console.error('Erro ao criar entrada:', err);
-      alert('Erro ao criar nova entrada. Tente novamente.');
-    }
-  };
-
-  const handleSelectDate = (entry) => {
-    // Garantir que a entrada tenha a estrutura de respostas
-    if (entry && !entry.respostas) {
-      // Migrar estrutura antiga (question1, question2, etc) para nova estrutura
-      const respostas = {};
-      perguntas.forEach((pergunta, index) => {
-        const oldKey = `question${index + 1}`;
-        respostas[pergunta.id] = entry[oldKey] || '';
-      });
-      entry.respostas = respostas;
-    }
-    setSelectedEntry(entry);
-  };
-
-  const handleContentChange = (entryId, questionId, value) => {
-    setEntries(entries.map(entry => {
-      if (entry.id === entryId) {
-        const updatedRespostas = {
-          ...(entry.respostas || {}),
-          [questionId]: value
-        };
-        return { ...entry, respostas: updatedRespostas };
-      }
-      return entry;
-    }));
-
-    // Atualizar entrada selecionada
-    if (selectedEntry?.id === entryId) {
-      const updatedRespostas = {
-        ...(selectedEntry.respostas || {}),
-        [questionId]: value
-      };
-      setSelectedEntry({ ...selectedEntry, respostas: updatedRespostas });
-    }
-  };
-
-  const handleSave = async (entry) => {
-    if (!entry || !entry.id) return;
-    
-    try {
-      setSaving(true);
-      
-      // Converter respostas para o formato da API
-      const answers = {};
-      Object.entries(entry.respostas || {}).forEach(([questionId, texto]) => {
-        if (texto && texto.trim()) {
-          answers[questionId] = texto;
-        }
-      });
-
-      // Atualizar entrada na API
-      await api.put(`/diary/${entry.id}`, {
-        answers,
-      });
-
-      // Atualizar estado local
-      setEntries(entries.map(e => {
-        if (e.id === entry.id) {
-          return { ...e, ...entry };
-        }
-        return e;
-      }));
-      
-      // Feedback visual de sucesso
-      console.log('Entrada salva com sucesso');
-    } catch (err) {
-      console.error('Erro ao salvar entrada:', err);
-      alert('Erro ao salvar entrada. Tente novamente.');
+      throw new Error(extrairErroApi(err, 'Erro ao salvar quinzena.'));
     } finally {
-      setSaving(false);
+      setSavingAutoadvocacia(false);
     }
   };
 
-  const handleDelete = async (entryId) => {
-    if (!entryId) return;
-    
+  const criarQuinzena = async () => {
+    setCreatingQuinzena(true);
     try {
-      // Deletar entrada na API
-      await api.delete(`/diary/${entryId}`);
-      
-      // Remover entrada da lista
-      const updatedEntries = entries.filter(e => e.id !== entryId);
-      setEntries(updatedEntries);
-      
-      // Se a entrada deletada estava selecionada, limpar seleção
-      if (selectedEntry?.id === entryId) {
-        setSelectedEntry(null);
-      }
+      const res = await api.post('/diario/autoadvocacia/quinzenas');
+      const nova = res.data.quinzena;
+      setQuinzenas((prev) => [...prev, nova]);
+      setQuinzenaSelecionada(nova);
+      trocarAba('autoadvocacia');
     } catch (err) {
-      console.error('Erro ao deletar entrada:', err);
-      alert('Erro ao deletar entrada. Tente novamente.');
+      setErro(extrairErroApi(err, 'Erro ao criar quinzena.'));
+    } finally {
+      setCreatingQuinzena(false);
     }
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen">
-      {/* Menu Lateral */}
-      <div className="w-full lg:w-1/3 flex-shrink-0 mt-3">
-        <DiarySidebar
-          entries={entries}
-          selectedDate={selectedEntry}
-          onSelectDate={handleSelectDate}
-          onCreateNew={handleCreateNew}
-          onDelete={handleDelete}
-        />
+    <div className="min-h-screen flex flex-col">
+      <div className="px-6 lg:px-10 pt-4 border-b border-gray-200 bg-white">
+        <div className="flex gap-2">
+          {ABAS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => trocarAba(id)}
+              className={`px-5 py-3 font-semibold text-sm border-b-2 transition-colors ${
+                aba === id
+                  ? 'border-violet-600 text-violet-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Conteúdo */}
-      <div className="flex-1 py-8 lg:py-10 px-8 lg:px-12">
-        <DiaryContent
-          selectedEntry={selectedEntry}
-          onChange={handleContentChange}
-          perguntas={perguntas}
-          loadingPerguntas={loadingPerguntas}
-          onSave={handleSave}
-          saving={saving}
-        />
+      {erro && (
+        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex justify-between items-center gap-4">
+          <span>{erro}</span>
+          <button
+            type="button"
+            onClick={() => { loadJornada(); loadAutoadvocacia(); }}
+            className="font-semibold underline shrink-0"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {avisoPaginaBloqueada && aba === 'jornada' && (
+        <div className="mx-6 mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-sm">
+          {avisoPaginaBloqueada}
+        </div>
+      )}
+
+      <div className="flex flex-col lg:flex-row flex-1">
+        <div className="w-full lg:w-80 xl:w-96 shrink-0">
+          {aba === 'jornada' ? (
+            <DiarioJornadaSidebar
+              paginas={paginas}
+              paginaSelecionada={paginaSelecionada}
+              onSelect={selecionarPagina}
+              loading={loadingJornada}
+            />
+          ) : (
+            <DiarioAutoadvocaciaTimeline
+              quinzenas={quinzenas}
+              quinzenaSelecionada={quinzenaSelecionada}
+              onSelect={setQuinzenaSelecionada}
+              onCreate={criarQuinzena}
+              creating={creatingQuinzena}
+            />
+          )}
+        </div>
+
+        <div className="flex-1 py-8 px-6 lg:px-10">
+          {aba === 'jornada' ? (
+            <DiarioJornadaPagina
+              pagina={paginaSelecionada}
+              onSave={salvarPagina}
+              saving={savingJornada}
+            />
+          ) : (
+            <DiarioAutoadvocaciaQuinzena
+              quinzena={quinzenaSelecionada}
+              onSave={salvarQuinzena}
+              saving={savingAutoadvocacia || loadingAutoadvocacia}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

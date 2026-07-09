@@ -14,6 +14,7 @@ import {
   TRACOS_PARA_DESBLOQUEAR_PROXIMO,
   tracosNecessariosParaDesbloquearProximo,
 } from '../constants/swotQuadrantes';
+import { reflexoesCompletasParaPdf } from '../utils/swotProgresso';
 
 const introP =
   'font-serif text-gray-900 text-base sm:text-lg leading-relaxed text-justify';
@@ -29,26 +30,33 @@ function necessariosParaProximo(quadrante, dadosSwot, progresso) {
 
 function Swot() {
   const { user } = useAuth();
-  const { dadosSwot, progresso, statusReflexoes, loading, error, refreshProgresso } = useSwot();
+  const { dadosSwot, progresso, progressoError, statusReflexoes, loading, error, refreshProgresso, recarregar } = useSwot();
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [erroPdf, setErroPdf] = useState(null);
 
   const totalItens = Object.values(dadosSwot).reduce(
     (acc, modulo) => acc + (modulo.items?.length || 0),
     0,
   );
 
+  const pdfDisponivel = totalItens > 0 && reflexoesCompletasParaPdf(progresso);
+
   const reqAmeaca = necessariosParaProximo('ameaca', dadosSwot, progresso);
   const reqFraqueza = necessariosParaProximo('fraqueza', dadosSwot, progresso);
   const reqOportunidade = necessariosParaProximo('oportunidade', dadosSwot, progresso);
 
   const handleBaixarPdf = async () => {
-    if (totalItens === 0 || gerandoPdf) return;
+    if (!pdfDisponivel || gerandoPdf) return;
     setGerandoPdf(true);
+    setErroPdf(null);
     try {
       const tracosDetalhados = await coletarDadosTracosParaPdf(dadosSwot);
       gerarSwotPdf(user?.name || 'Usuário', dadosSwot, tracosDetalhados);
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
+      setErroPdf(
+        'Não foi possível gerar o PDF. Tente novamente ou entre em contato com a pesquisadora principal.',
+      );
     } finally {
       setGerandoPdf(false);
     }
@@ -59,7 +67,7 @@ function Swot() {
   }
 
   if (error) {
-    return <SwotError error={error} />;
+    return <SwotError error={error} onRetry={recarregar} retrying={loading} />;
   }
 
   return (
@@ -132,14 +140,25 @@ function Swot() {
           <SwotGrid
             dadosSwot={dadosSwot}
             progresso={progresso}
+            progressoError={progressoError}
             statusPorTraco={statusReflexoes}
             onProgressoChange={refreshProgresso}
+            onRetryProgresso={refreshProgresso}
           />
 
-          <div className="flex justify-center pt-2">
+          <div className="flex flex-col items-center pt-2 gap-3">
+            {erroPdf && (
+              <p className="text-sm text-red-600 text-center max-w-md px-4">{erroPdf}</p>
+            )}
+            {!pdfDisponivel && totalItens > 0 && (
+              <p className="text-sm text-gray-600 text-center max-w-lg px-4">
+                O PDF ficará disponível após enviar as reflexões de todos os traços nos quadrantes
+                com exercícios (ameaças, fraquezas e oportunidades).
+              </p>
+            )}
             <Button
               onClick={handleBaixarPdf}
-              disabled={totalItens === 0 || gerandoPdf}
+              disabled={!pdfDisponivel || gerandoPdf}
               className="inline-flex items-center gap-2"
             >
               <Download className="w-5 h-5" />

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { extrairErroApi } from '../../utils/api-errors';
 import { montarItensAtrapalhar, montarExemplosOportunidade, montarExemplosPraticosForca, montarComoUsar } from '../../constants/relatorioSh';
 import { ROTULOS_VER_MAIS } from '../../constants/relatorioAmeacaFraqueza.jsx';
 import { ROTULOS_VER_MAIS_FO, TITULOS_FO } from '../../constants/relatorioFo.jsx';
@@ -9,6 +11,38 @@ import {
   introExercicios,
   questoesDoQuadrante,
 } from '../../constants/swotQuadranteExercicios.jsx';
+
+async function carregarRelatorio(tipo, numeroTraco) {
+  const url =
+    tipo === 'SH'
+      ? `/relatorio-sh/${numeroTraco}`
+      : tipo === 'CH'
+        ? `/relatorio-ch/${numeroTraco}`
+        : `/traco-detalhe/${tipo}/${numeroTraco}`;
+
+  try {
+    const res = await api.get(url);
+    return { detalhe: res.data, erroRelatorio: null, mensagemErro: null };
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      return { detalhe: null, erroRelatorio: 'nao_cadastrado', mensagemErro: null };
+    }
+    return {
+      detalhe: null,
+      erroRelatorio: 'rede',
+      mensagemErro: extrairErroApi(err, 'Erro ao carregar o relatório deste traço.'),
+    };
+  }
+}
+
+async function carregarReflexao(tipo, numeroTraco, quadrante) {
+  try {
+    const res = await api.get(`/reflexao-traco/${tipo}/${numeroTraco}/${quadrante}`);
+    return res.data?.respostas ?? {};
+  } catch {
+    return {};
+  }
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -327,13 +361,15 @@ function ConteudoForca({ detalhe }) {
 function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
   const [detalhe,      setDetalhe]      = useState(null);
   const [carregando,   setCarregando]   = useState(false);
-  const [erro,         setErro]         = useState(null);
+  const [erroRelatorio, setErroRelatorio] = useState(null);
+  const [mensagemErroRelatorio, setMensagemErroRelatorio] = useState(null);
   const [erroSalvar,   setErroSalvar]   = useState(null);
   const [salvoCom,     setSalvoCom]     = useState(false);
   const [reflexoes,    setReflexoes]    = useState({});
   const [tocados,      setTocados]      = useState({});
   const [salvandoComo, setSalvandoComo] = useState(null); // 'rascunho' | 'envio' | null
   const [exemplosVisivel, setExemplosVisivel] = useState(false);
+  const [diarioPaginaChave, setDiarioPaginaChave] = useState(null);
 
   const secoesRef = useRef({
     atrapalhar: 'secao-atrapalhar',
@@ -360,25 +396,24 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
     if (!isOpen || !tracoInfo) return;
 
     setDetalhe(null);
-    setErro(null);
+    setErroRelatorio(null);
+    setMensagemErroRelatorio(null);
     setErroSalvar(null);
     setSalvoCom(false);
     setSalvandoComo(null);
     setExemplosVisivel(false);
+    setDiarioPaginaChave(null);
     setCarregando(true);
 
     const { tipo, numeroTraco, quadrante } = tracoInfo;
 
     Promise.all([
-      tipo === 'SH'
-        ? api.get(`/relatorio-sh/${numeroTraco}`).catch(() => null)
-        : tipo === 'CH'
-          ? api.get(`/relatorio-ch/${numeroTraco}`).catch(() => null)
-          : api.get(`/traco-detalhe/${tipo}/${numeroTraco}`).catch(() => null),
-      api.get(`/reflexao-traco/${tipo}/${numeroTraco}/${quadrante}`).catch(() => null),
-    ]).then(([resDetalhe, resReflexao]) => {
-      setDetalhe(resDetalhe?.data ?? null);
-      const respostas = resReflexao?.data?.respostas ?? {};
+      carregarRelatorio(tipo, numeroTraco),
+      carregarReflexao(tipo, numeroTraco, quadrante),
+    ]).then(([relatorio, respostas]) => {
+      setDetalhe(relatorio.detalhe);
+      setErroRelatorio(relatorio.erroRelatorio);
+      setMensagemErroRelatorio(relatorio.mensagemErro);
       const qs = questoesDoQuadrante(quadrante);
       setReflexoes(Object.fromEntries(qs.map(({ id }) => [id, respostas[id] ?? ''])));
       setTocados(tocadoInicial(qs));
@@ -420,7 +455,7 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
       (onSalvo ?? onClose)();
     } catch (err) {
       console.error('[SwotTracoModal] Erro ao salvar rascunho:', err?.response?.data ?? err?.message ?? err);
-      setErroSalvar('Não foi possível salvar. Verifique sua conexão e tente novamente.');
+      setErroSalvar(extrairErroApi(err, 'Não foi possível salvar. Verifique sua conexão e tente novamente.'));
     } finally {
       setSalvandoComo(null);
     }
@@ -436,18 +471,22 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
     setSalvandoComo('envio');
     setErroSalvar(null);
     try {
-      await api.post('/reflexao-traco', { ...payloadReflexao(), enviado: true });
+      const res = await api.post('/reflexao-traco', { ...payloadReflexao(), enviado: true });
       setSalvoCom(true);
-      setTimeout(() => (onSalvo ?? onClose)(), 800);
+      if (res.data?.diarioPaginaChave) {
+        setDiarioPaginaChave(res.data.diarioPaginaChave);
+      } else {
+        setTimeout(() => (onSalvo ?? onClose)(), 800);
+      }
     } catch (err) {
       console.error('[SwotTracoModal] Erro ao salvar reflexão:', err?.response?.data ?? err?.message ?? err);
-      setErroSalvar('Não foi possível salvar. Verifique sua conexão e tente novamente.');
+      setErroSalvar(extrairErroApi(err, 'Não foi possível salvar. Verifique sua conexão e tente novamente.'));
     } finally {
       setSalvandoComo(null);
     }
   };
 
-  const titulo = detalhe?.titulo ?? tracoInfo.label;
+  const titulo = tracoInfo.label || detalhe?.titulo;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -480,7 +519,35 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
             </div>
           )}
 
-          {!carregando && !detalhe && (
+          {!carregando && erroRelatorio === 'rede' && (
+            <div className="py-8 text-center">
+              <p className="text-lg font-medium text-red-700">{mensagemErroRelatorio}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!tracoInfo) return;
+                  setCarregando(true);
+                  carregarRelatorio(tracoInfo.tipo, tracoInfo.numeroTraco).then((relatorio) => {
+                    setDetalhe(relatorio.detalhe);
+                    setErroRelatorio(relatorio.erroRelatorio);
+                    setMensagemErroRelatorio(relatorio.mensagemErro);
+                  }).finally(() => setCarregando(false));
+                }}
+                className="mt-3 text-sm font-semibold text-violet-700 hover:underline"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          )}
+
+          {!carregando && erroRelatorio === 'nao_cadastrado' && (
+            <div className="py-8 text-center text-gray-500">
+              <p className="text-lg font-medium">Conteúdo não disponível</p>
+              <p className="text-sm mt-1">As informações detalhadas deste traço ainda não foram cadastradas.</p>
+            </div>
+          )}
+
+          {!carregando && !erroRelatorio && !detalhe && (
             <div className="py-8 text-center text-gray-500">
               <p className="text-lg font-medium">Conteúdo não disponível</p>
               <p className="text-sm mt-1">As informações detalhadas deste traço ainda não foram cadastradas.</p>
@@ -681,6 +748,29 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
 
         {/* Footer */}
         <div className="flex flex-col gap-2 p-5 border-t border-gray-200 bg-gray-50 shrink-0">
+          {diarioPaginaChave && (
+            <div className="mb-2 p-4 rounded-xl bg-violet-50 border border-violet-200 text-center space-y-3">
+              <p className="text-sm text-violet-900">
+                Exercício enviado! Deseja registrar uma reflexão no diário? (opcional)
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Link
+                  to={`/diario?aba=jornada&pagina=${encodeURIComponent(diarioPaginaChave)}`}
+                  className="px-5 py-2 rounded-lg bg-violet-600 text-white font-semibold hover:bg-violet-700"
+                  onClick={() => (onSalvo ?? onClose)()}
+                >
+                  Ir para o diário
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => (onSalvo ?? onClose)()}
+                  className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100"
+                >
+                  Agora não
+                </button>
+              </div>
+            </div>
+          )}
           {erroSalvar && (
             <p className="text-sm text-red-600 font-medium text-center">{erroSalvar}</p>
           )}
@@ -695,7 +785,7 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
             >
               Fechar
             </button>
-            {questoes.length > 0 && (
+            {questoes.length > 0 && !diarioPaginaChave && (
               <>
                 <button
                   type="button"

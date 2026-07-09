@@ -53,7 +53,7 @@ function FormSelect({ id, label, value, onChange, options, required }) {
   );
 }
 
-function FormTextarea({ id, label, value, onChange, required, rows = 4, placeholder = '' }) {
+function FormTextarea({ id, label, value, onChange, required, rows = 4, placeholder = '', maxLength }) {
   return (
     <div>
       <label htmlFor={id} className={labelClass}>
@@ -68,6 +68,7 @@ function FormTextarea({ id, label, value, onChange, required, rows = 4, placehol
         value={value}
         onChange={onChange}
         required={required}
+        maxLength={maxLength}
       />
     </div>
   );
@@ -116,6 +117,67 @@ function Cadastrar() {
   };
 
   const validarCondicionais = () => {
+    if (formData.nomeCompleto.trim().length < 3) {
+      setErro('O nome deve ter pelo menos 3 caracteres.');
+      return false;
+    }
+    if (formData.nomeCompleto.trim().length > 100) {
+      setErro('O nome deve ter no máximo 100 caracteres.');
+      return false;
+    }
+    if (formData.email.trim().length > 255) {
+      setErro('O e-mail é muito longo.');
+      return false;
+    }
+    if (formData.senha.length < 8) {
+      setErro('A senha deve ter pelo menos 8 caracteres.');
+      return false;
+    }
+    if (formData.senha.length > 100) {
+      setErro('A senha deve ter no máximo 100 caracteres.');
+      return false;
+    }
+    if (formData.especialistaIndicacao.trim().length < 2) {
+      setErro('Informe o nome do especialista/pesquisador (mínimo 2 caracteres).');
+      return false;
+    }
+    if (formData.especialistaIndicacao.trim().length > 300) {
+      setErro('O nome do especialista deve ter no máximo 300 caracteres.');
+      return false;
+    }
+    if (formData.outrasCondicoesDetalhe.trim().length > 2000) {
+      setErro('O detalhe de outras condições deve ter no máximo 2000 caracteres.');
+      return false;
+    }
+    if (formData.generoOutroTexto.trim().length > 200) {
+      setErro('A descrição de gênero deve ter no máximo 200 caracteres.');
+      return false;
+    }
+    if (formData.profissao.trim().length > 300) {
+      setErro('A profissão deve ter no máximo 300 caracteres.');
+      return false;
+    }
+    if (formData.auxilioGovernoExperiencia.trim().length > 4000) {
+      setErro('O campo de auxílio do governo deve ter no máximo 4000 caracteres.');
+      return false;
+    }
+    if (formData.burnoutDescricao.trim().length > 4000) {
+      setErro('A descrição de burnout deve ter no máximo 4000 caracteres.');
+      return false;
+    }
+    if (formData.contouSuicidioOuBarreiras.trim().length > 4000) {
+      setErro('Este campo deve ter no máximo 4000 caracteres.');
+      return false;
+    }
+    if (formData.probabilidadeSuicidioFuturoExplicacao.trim().length > 4000) {
+      setErro('Este campo deve ter no máximo 4000 caracteres.');
+      return false;
+    }
+    const idadeNum = parseInt(formData.idade.trim(), 10);
+    if (!formData.idade.trim() || Number.isNaN(idadeNum) || idadeNum < 1 || idadeNum > 150) {
+      setErro('Informe uma idade válida (entre 1 e 150).');
+      return false;
+    }
     if (formData.outrasCondicoesSaude === 'sim' && !formData.outrasCondicoesDetalhe.trim()) {
       setErro('Informe quais outras condições (ou use o campo para detalhar em "outro").');
       return false;
@@ -148,6 +210,8 @@ function Cadastrar() {
       return;
     }
 
+    const idadeNum = parseInt(formData.idade.trim(), 10);
+
     const payload = {
       name: formData.nomeCompleto.trim(),
       email: formData.email.trim(),
@@ -158,7 +222,7 @@ function Cadastrar() {
       outrasCondicoesDetalhe: formData.outrasCondicoesDetalhe.trim(),
       acessoMedicacoes: formData.acessoMedicacoes,
       terapiasNaoMedicamentosas: formData.terapiasNaoMedicamentosas,
-      idade: formData.idade.trim(),
+      idade: String(idadeNum),
       corRaca: formData.corRaca,
       genero: formData.genero,
       generoOutroTexto: formData.generoOutroTexto.trim(),
@@ -200,6 +264,7 @@ function Cadastrar() {
             type="text"
             value={formData.nomeCompleto}
             onChange={(e) => handleChange('nomeCompleto', e.target.value)}
+            maxLength={100}
             required
           />
           <Input
@@ -207,6 +272,7 @@ function Cadastrar() {
             type="email"
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
+            maxLength={255}
             required
           />
           <PasswordInput
@@ -214,6 +280,7 @@ function Cadastrar() {
             value={formData.senha}
             onChange={(value) => handleChange('senha', value)}
             required
+            maxLength={100}
             autoComplete="new-password"
           />
           <PasswordInput
@@ -221,6 +288,7 @@ function Cadastrar() {
             value={formData.confirmarSenha}
             onChange={(value) => handleChange('confirmarSenha', value)}
             required
+            maxLength={100}
             autoComplete="new-password"
           />
         </section>
@@ -232,6 +300,7 @@ function Cadastrar() {
             type="text"
             value={formData.especialistaIndicacao}
             onChange={(e) => handleChange('especialistaIndicacao', e.target.value)}
+            maxLength={300}
             required
           />
           <FormSelect
@@ -257,6 +326,7 @@ function Cadastrar() {
             onChange={(e) => handleChange('outrasCondicoesDetalhe', e.target.value)}
             required={formData.outrasCondicoesSaude === 'sim'}
             rows={3}
+            maxLength={2000}
           />
           <FormSelect
             id="acessoMedicacoes"
@@ -283,6 +353,7 @@ function Cadastrar() {
             type="text"
             value={formData.idade}
             onChange={(e) => handleChange('idade', e.target.value)}
+            maxLength={30}
             required
           />
           <FormSelect
@@ -307,6 +378,7 @@ function Cadastrar() {
               type="text"
               value={formData.generoOutroTexto}
               onChange={(e) => handleChange('generoOutroTexto', e.target.value)}
+            maxLength={200}
               required
             />
           )}
@@ -315,6 +387,7 @@ function Cadastrar() {
             type="text"
             value={formData.profissao}
             onChange={(e) => handleChange('profissao', e.target.value)}
+            maxLength={300}
             required
           />
           <FormSelect
@@ -352,6 +425,7 @@ function Cadastrar() {
             onChange={(e) => handleChange('auxilioGovernoExperiencia', e.target.value)}
             required
             rows={4}
+            maxLength={4000}
           />
           <FormSelect
             id="nivelRenda"
@@ -381,6 +455,7 @@ function Cadastrar() {
               onChange={(e) => handleChange('burnoutDescricao', e.target.value)}
               required
               rows={4}
+              maxLength={4000}
             />
           )}
           <FormSelect
@@ -406,6 +481,7 @@ function Cadastrar() {
             onChange={(e) => handleChange('contouSuicidioOuBarreiras', e.target.value)}
             required
             rows={5}
+            maxLength={4000}
           />
           <FormTextarea
             id="probabilidadeFuturo"
@@ -416,6 +492,7 @@ function Cadastrar() {
             }
             required
             rows={5}
+            maxLength={4000}
           />
         </section>
 

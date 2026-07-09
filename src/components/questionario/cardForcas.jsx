@@ -3,6 +3,7 @@ import RespostaSimNao from '../shared/RespostaSimNao';
 
 function CardForcas({ 
   pergunta, 
+  perguntaId = '',
   exemplo = null,
   resposta,
   onRespostaChange,
@@ -33,6 +34,7 @@ function CardForcas({
           frequencia={frequencia}
           onFrequenciaChange={onFrequenciaChange}
           tipo="F"
+          perguntaId={perguntaId}
         />
       )}
     </div>

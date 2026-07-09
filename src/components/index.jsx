@@ -27,8 +27,10 @@ export { default as ChangePasswordForm } from './form/ChangePasswordForm';
 export { default as ProfileRegistrationDisplay } from './ProfileRegistrationDisplay';
 
 // Diary
-export { default as DiarySidebar } from './diary/DiarySidebar';
-export { default as DiaryContent } from './diary/DiaryContent';
+export { default as DiarioJornadaSidebar } from './diary/DiarioJornadaSidebar';
+export { default as DiarioJornadaPagina } from './diary/DiarioJornadaPagina';
+export { default as DiarioAutoadvocaciaTimeline } from './diary/DiarioAutoadvocaciaTimeline';
+export { default as DiarioAutoadvocaciaQuinzena } from './diary/DiarioAutoadvocaciaQuinzena';
 
 // SWOT
 export { default as SwotCard } from './swot/SwotCard';

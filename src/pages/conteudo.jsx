@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageContainer, PageTitle, PageContent, CardPost, Search, EmptyState } from '../components'
 import api from '../services/api'
+import { extrairErroApi } from '../utils/api-errors'
 
 function Conteudo() {
   const navigate = useNavigate()
@@ -46,8 +47,7 @@ function Conteudo() {
       setCards(response.data.posts || [])
     } catch (err) {
       console.error('Erro ao carregar posts:', err)
-      const errorMessage = err.response?.data?.error || err.message || 'Erro ao carregar posts. Tente novamente.'
-      setError(errorMessage)
+      setError(extrairErroApi(err, 'Erro ao carregar posts. Tente novamente.'))
       setCards([])
     } finally {
       setLoading(false)

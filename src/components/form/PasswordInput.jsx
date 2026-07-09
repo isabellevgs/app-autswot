@@ -17,6 +17,7 @@ function PasswordInput({
   hasError = false,
   className = '',
   autoComplete,
+  maxLength,
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const reactId = useId();
@@ -40,6 +41,7 @@ function PasswordInput({
           placeholder={placeholder}
           required={required}
           autoComplete={autoComplete}
+          maxLength={maxLength}
           className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
             showErr
               ? 'border-red-500 focus:ring-red-500'

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthLayout, Input, PasswordInput, Button } from '../components';
@@ -13,6 +13,14 @@ function Login() {
     senha: ''
   });
   const [erro, setErro] = useState('');
+
+  useEffect(() => {
+    const msg = sessionStorage.getItem('autswot:session-message');
+    if (msg) {
+      setErro(msg);
+      sessionStorage.removeItem('autswot:session-message');
+    }
+  }, []);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });

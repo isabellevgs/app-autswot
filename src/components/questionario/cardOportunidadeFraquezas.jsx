@@ -4,6 +4,7 @@ import ExplicacaoCard from '../shared/ExplicacaoCard';
 
 function CardOportunidadeFraquezas({ 
   pergunta, 
+  perguntaId = '',
   explicacao = null,
   resposta, 
   onRespostaChange,
@@ -33,6 +34,7 @@ function CardOportunidadeFraquezas({
           frequencia={frequencia}
           onFrequenciaChange={onFrequenciaChange}
           tipo="FO"
+          perguntaId={perguntaId}
         />
       )}
     </div>

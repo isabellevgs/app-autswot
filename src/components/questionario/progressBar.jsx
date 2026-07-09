@@ -1,12 +1,13 @@
-function ProgressBar({ perguntaAtual, totalPerguntas }) {
-  const porcentagem = Math.round((perguntaAtual / totalPerguntas) * 100);
-  const larguraBarra = `${(perguntaAtual / totalPerguntas) * 100}%`;
+function ProgressBar({ perguntaAtual, totalRespondiveis, completadas = 0 }) {
+  const total = totalRespondiveis || 1;
+  const porcentagem = Math.round((completadas / total) * 100);
+  const larguraBarra = `${porcentagem}%`;
 
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex justify-between items-center mb-2">
         <span className="text-gray-600 text-sm font-medium">
-          Pergunta {perguntaAtual} de {totalPerguntas}
+          Pergunta {perguntaAtual} de {totalRespondiveis}
         </span>
         <span className="text-gray-600 text-sm font-medium">
           {porcentagem}%
@@ -23,4 +24,3 @@ function ProgressBar({ perguntaAtual, totalPerguntas }) {
 }
 
 export default ProgressBar;
-

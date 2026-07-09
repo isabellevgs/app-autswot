@@ -1,7 +1,14 @@
 // Gerenciamento de autenticação e tokens JWT
 import api from './api';
+import { extrairErroApi } from '../utils/api-errors';
 
 const apiUrl = () => api.defaults.baseURL ?? import.meta.env.VITE_API_URL ?? '';
+
+function limparCacheQuestionario() {
+  import('../utils/questionarioCache.js').then(({ invalidateQuestionarioCache }) => {
+    invalidateQuestionarioCache();
+  });
+}
 
 export const ACCESS_TOKEN_KEY = "@autswot-access-token";
 export const REFRESH_TOKEN_KEY = "@autswot-refresh-token";
@@ -24,6 +31,7 @@ export const getUser = () => {
 
 // Salva os tokens e dados do usuário (login)
 export const saveAuth = (accessToken, refreshToken, user) => {
+  limparCacheQuestionario();
   localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -31,6 +39,7 @@ export const saveAuth = (accessToken, refreshToken, user) => {
 
 // Remove os tokens e dados do usuário (logout)
 export const logout = () => {
+  limparCacheQuestionario();
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
@@ -70,25 +79,10 @@ export const loginUser = async (email, password) => {
     };
   } catch (error) {
     console.error('Erro no login:', error);
-    
-    if (error.response) {
-      if (error.response.status === 429) {
-        throw new Error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
-      }
-      // Erro da API
-      const errorMsg = error.response.data?.error || error.response.data?.message || 'Erro ao fazer login';
-      throw new Error(errorMsg);
-    } else if (error.code === 'ECONNREFUSED') {
-      throw new Error('Não foi possível conectar à API. Verifique se o servidor está acessível');
-    } else if (error.code === 'ETIMEDOUT') {
-      throw new Error('A requisição demorou muito. Verifique sua conexão com a internet.');
-    } else if (error.request) {
-      // Erro de rede
-      throw new Error('Erro de conexão. Verifique sua conexão com a internet');
-    } else {
-      // Outro erro
-      throw new Error(error.message || 'Erro ao fazer login');
+    if (error.response?.status === 429) {
+      throw new Error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
     }
+    throw new Error(extrairErroApi(error, 'Erro ao fazer login'));
   }
 };
 
@@ -117,30 +111,7 @@ export const registerUser = async (registrationPayload) => {
     };
   } catch (error) {
     console.error('Erro no registro:', error);
-    
-    if (error.response) {
-      // Erro da API
-      const errorMsg = error.response.data?.error || error.response.data?.message || 'Erro ao criar conta';
-      const details = error.response.data?.details;
-      
-      if (details && Array.isArray(details)) {
-        // Formatar erros de validação do Zod
-        const messages = details.map(d => d.message || `${d.field}: erro`).join(', ');
-        throw new Error(messages);
-      }
-      
-      throw new Error(errorMsg);
-    } else if (error.code === 'ECONNREFUSED') {
-      throw new Error('Não foi possível conectar à API. Verifique se o servidor está acessível');
-    } else if (error.code === 'ETIMEDOUT') {
-      throw new Error('A requisição demorou muito. Verifique sua conexão com a internet.');
-    } else if (error.request) {
-      // Erro de rede
-      throw new Error('Erro de conexão. Verifique sua conexão com a internet');
-    } else {
-      // Outro erro
-      throw new Error(error.message || 'Erro ao criar conta');
-    }
+    throw new Error(extrairErroApi(error, 'Erro ao criar conta'));
   }
 };
 
@@ -164,8 +135,8 @@ export const getCurrentUser = async () => {
     
     return normalizedUser;
   } catch (error) {
-    // Se o token for inválido, fazer logout
-    if (error.response && error.response.status === 401) {
+    // Se o token for inválido ou acesso negado, fazer logout
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       logout();
     }
     throw error;
@@ -180,7 +151,7 @@ export const getCurrentUser = async () => {
 export const updateProfile = async (data) => {
   try {
     const response = await api.put('/auth/profile', data);
-    const { user } = response.data;
+    const { user, accessToken, refreshToken } = response.data;
     
     // Normalizar o role antes de salvar
     const normalizedUser = {
@@ -188,8 +159,11 @@ export const updateProfile = async (data) => {
       role: user.role ? String(user.role).toUpperCase() : 'USER',
     };
     
-    // Atualizar dados do usuário no localStorage
-    localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
+    if (accessToken && refreshToken) {
+      saveAuth(accessToken, refreshToken, normalizedUser);
+    } else {
+      localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
+    }
     
     return {
       ...response.data,
@@ -197,18 +171,7 @@ export const updateProfile = async (data) => {
     };
   } catch (error) {
     console.error('Erro ao atualizar perfil:', error);
-    
-    if (error.response) {
-      const errorMsg = error.response.data?.error || error.response.data?.message || 'Erro ao atualizar perfil';
-      throw new Error(errorMsg);
-    } else if (error.code === 'ECONNREFUSED') {
-      throw new Error('Não foi possível conectar à API. Verifique se o servidor está acessível');
-    } else if (error.code === 'ETIMEDOUT') {
-      throw new Error('A requisição demorou muito. Verifique sua conexão com a internet.');
-    } else if (error.request) {
-      throw new Error('Erro de conexão. Verifique sua conexão com a internet');
-    }
-    throw new Error(error.message || 'Erro ao atualizar perfil');
+    throw new Error(extrairErroApi(error, 'Erro ao atualizar perfil'));
   }
 };
 
@@ -220,33 +183,21 @@ export const updateProfile = async (data) => {
  */
 export const changePassword = async (currentPassword, newPassword) => {
   try {
-    
-    const response = await api.put('/v1/auth/change-password', {
+    const response = await api.put('/auth/change-password', {
       currentPassword,
       newPassword,
     });
-    
+
+    const { accessToken, refreshToken } = response.data;
+    if (accessToken && refreshToken) {
+      const user = getUser();
+      saveAuth(accessToken, refreshToken, user);
+    }
+
     return response.data;
   } catch (error) {
-    console.error('Erro na API changePassword:', error);
-    
     console.error('Erro ao trocar senha:', error);
-    
-    if (error.response) {
-      // A API pode retornar o erro em diferentes formatos
-      const errorMsg = error.response.data?.message || 
-                      error.response.data?.error || 
-                      error.response.data?.message?.error ||
-                      'Erro ao trocar senha';
-      throw new Error(errorMsg);
-    } else if (error.code === 'ECONNREFUSED') {
-      throw new Error('Não foi possível conectar à API. Verifique se o servidor está acessível');
-    } else if (error.code === 'ETIMEDOUT') {
-      throw new Error('A requisição demorou muito. Verifique sua conexão com a internet.');
-    } else if (error.request) {
-      throw new Error('Erro de conexão. Verifique sua conexão com a internet');
-    }
-    throw new Error(error.message || 'Erro ao trocar senha');
+    throw new Error(extrairErroApi(error, 'Erro ao trocar senha'));
   }
 };
 
@@ -261,8 +212,7 @@ export const deleteAccount = async () => {
     return response.data;
   } catch (error) {
     if (error.response) {
-      const errorMsg = error.response.data.error || 'Erro ao excluir conta';
-      throw new Error(errorMsg);
+      throw new Error(extrairErroApi(error, 'Erro ao excluir conta'));
     }
     throw new Error('Erro ao excluir conta');
   }

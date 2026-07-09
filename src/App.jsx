@@ -1,6 +1,7 @@
 import { BrowserRouter, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Topbar from './components/layout/Topbar';
+import SessionDegradedBanner from './components/layout/SessionDegradedBanner';
 import AppRoutes from './routes/AppRoutes';
 
 // Componente interno para controlar a exibição da Topbar
@@ -11,6 +12,7 @@ function AppContent() {
 
   return (
     <>
+      <SessionDegradedBanner />
       {mostrarTopbar && (
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <Topbar />

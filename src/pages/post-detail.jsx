@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { PageContainer, PageTitle, PageContent, ContentCard } from '../components'
 import api from '../services/api'
+import { extrairErroApi } from '../utils/api-errors'
 
 function PostDetail() {
   const { id } = useParams()
@@ -23,7 +24,7 @@ function PostDetail() {
       setPost(response.data.post)
     } catch (err) {
       console.error('Erro ao carregar post:', err)
-      setError('Erro ao carregar post. Tente novamente.')
+      setError(extrairErroApi(err, 'Erro ao carregar post. Tente novamente.'))
     } finally {
       setLoading(false)
     }
@@ -64,15 +65,15 @@ function PostDetail() {
 
   return (
     <PageContainer>
-      <PageTitle>COMUNIDADE</PageTitle>
+      <PageTitle>CONTEÚDO</PageTitle>
       
       <PageContent>
         <button
-          onClick={() => navigate('/comunidade')}
+          onClick={() => navigate('/conteudo')}
           className="mb-6 flex items-center gap-2 text-slate-600 hover:text-violet-700 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Voltar para Comunidade</span>
+          <span>Voltar para Conteúdo</span>
         </button>
 
         <ContentCard className="overflow-hidden">

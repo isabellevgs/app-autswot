@@ -19,7 +19,17 @@ function totaisPorQuadrante(dadosSwot) {
   );
 }
 
-function calcularStatus(secao, progresso, dadosSwot) {
+function textoProgressoQuadrante(quadrante, progresso, dadosSwot) {
+  const secao = SECAO_POR_QUADRANTE[quadrante];
+  const total = progresso?.[quadrante]?.totalTracos ?? dadosSwot?.[secao]?.items?.length ?? 0;
+  const concluidos = progresso?.[quadrante]?.concluidos ?? 0;
+
+  if (total <= 0) return null;
+  if (quadrante === 'forca') return `${total} traço${total !== 1 ? 's' : ''}`;
+  return `${concluidos}/${total} enviado${concluidos !== 1 ? 's' : ''}`;
+}
+
+function calcularStatus(secao, progresso, dadosSwot, progressoIndisponivel) {
   if (!DESBLOQUEIO_SEQUENCIAL_ATIVO) {
     return { bloqueado: false, descricao: 'Clique para expandir seus traços.' };
   }
@@ -29,9 +39,15 @@ function calcularStatus(secao, progresso, dadosSwot) {
 
   if (!progresso) {
     const concluidos = {};
-    const bloqueado = !quadranteEstaDesbloqueado(quadrante, concluidos, totais);
+    const bloqueado = progressoIndisponivel || !quadranteEstaDesbloqueado(quadrante, concluidos, totais);
     if (!bloqueado) {
       return { bloqueado: false, descricao: 'Clique para expandir seus traços.' };
+    }
+    if (progressoIndisponivel) {
+      return {
+        bloqueado: true,
+        descricao: 'Progresso de desbloqueio indisponível. Tente recarregar.',
+      };
     }
     const faltam = tracosFaltandoParaDesbloquear(quadrante, concluidos, totais);
     return {
@@ -84,7 +100,7 @@ function colSpanPara(secaoIndex, expandidos) {
   return algumExpandidoNaLinha(minhaLinha) ? 'sm:col-span-2' : '';
 }
 
-function SwotGrid({ dadosSwot, progresso, statusPorTraco, onProgressoChange }) {
+function SwotGrid({ dadosSwot, progresso, progressoError, statusPorTraco, onProgressoChange, onRetryProgresso }) {
   const [expandidos,       setExpandidos]       = useState({});
   const [tracoSelecionado, setTracoSelecionado] = useState(null);
   const [modalAberta,      setModalAberta]       = useState(false);
@@ -106,10 +122,26 @@ function SwotGrid({ dadosSwot, progresso, statusPorTraco, onProgressoChange }) {
   }, [onProgressoChange]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
+    <div className="space-y-4">
+      {progressoError && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p className="text-sm text-amber-900">{progressoError}</p>
+          <button
+            type="button"
+            onClick={onRetryProgresso}
+            className="text-sm font-semibold text-amber-800 hover:underline shrink-0"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
       {SWOT_ORDEM.map((secao, index) => {
         const data        = dadosSwot[secao];
-        const status      = calcularStatus(secao, progresso, dadosSwot);
+        const quadrante   = QUADRANTE_POR_SECAO[secao];
+        const status      = calcularStatus(secao, progresso, dadosSwot, !!progressoError);
+        const progressoTexto = textoProgressoQuadrante(quadrante, progresso, dadosSwot);
         const isExpandido = !status.bloqueado && !!expandidos[secao];
         const colSpan     = colSpanPara(index, expandidos);
 
@@ -125,6 +157,7 @@ function SwotGrid({ dadosSwot, progresso, statusPorTraco, onProgressoChange }) {
               onItemClick={handleItemClick}
               gradient={data.gradient}
               descricao={status.descricao}
+              progressoTexto={progressoTexto}
               statusPorTraco={statusPorTraco}
             />
           </div>
@@ -139,6 +172,7 @@ function SwotGrid({ dadosSwot, progresso, statusPorTraco, onProgressoChange }) {
           tracoInfo={tracoSelecionado}
         />
       )}
+      </div>
     </div>
   );
 }

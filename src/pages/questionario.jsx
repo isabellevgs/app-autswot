@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { useCallback, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import CartPerguntaSH from '../components/questionario/cartPerguntaSH';
 import CardPerguntaCH from '../components/questionario/cardPerguntaCH';
 import CardOportunidadeFraquezas from '../components/questionario/cardOportunidadeFraquezas';
@@ -11,140 +11,264 @@ import { usePerguntas } from '../hooks/usePerguntas';
 import { useQuestionario } from '../hooks/useQuestionario';
 import { useSalvarResposta } from '../hooks/useSalvarResposta';
 import { useRespostasSalvas } from '../hooks/useRespostasSalvas';
-import { estaDesabilitado } from '../utils/questionarioValidation';
-import { questionarioEstaCompleto } from '../utils/questionarioCompleto';
+import {
+  estaDesabilitado,
+  questionarioEstaCompleto,
+  perguntaChHistoriaIndisponivel,
+  contarRespostasCompletas,
+  indiceRespondivelAtual,
+} from '../utils/questionarioValidation';
+import { extrairErroApi } from '../utils/api-errors';
 
 function Questionario() {
   const navigate = useNavigate();
-  const { perguntas, loading, error } = usePerguntas();
-  const { respostasSalvas, atualizarRespostaSalva, loading: loadingRespostas } = useRespostasSalvas();
+  const { perguntas, loading, error, recarregar } = usePerguntas();
+  const {
+    respostasSalvas,
+    atualizarRespostaSalva,
+    loading: loadingRespostas,
+    error: errorRespostas,
+    recarregarRespostas,
+  } = useRespostasSalvas();
   const { salvarResposta, prepararDadosResposta, salvando } = useSalvarResposta();
-  
+  const [recarregandoHistoria, setRecarregandoHistoria] = useState(false);
+  const [recarregando, setRecarregando] = useState(false);
+
   const {
     perguntaAtualIndex,
     resposta,
     setResposta,
+    handleRespostaChange,
+    handleFrequenciaChange,
     frequencia,
     setFrequencia,
     intensidade,
     setIntensidade,
     perguntaAtualData,
-    perguntaAtual,
     totalPerguntas,
     perguntaTemIntensidade,
     avancarPergunta: avancarPerguntaOriginal,
-    voltarPergunta
+    voltarPergunta,
+    reposicionar,
   } = useQuestionario(perguntas, respostasSalvas, loadingRespostas);
 
-  // Função para salvar resposta atual
+  const carregando = loading || loadingRespostas;
+  const historiaIndisponivel = perguntaChHistoriaIndisponivel(perguntaAtualData);
+  const totalRespondiveis = contarPerguntasRespondiveis(perguntas);
+  const respostasCompletas = contarRespostasCompletas(perguntas, respostasSalvas);
+
   const salvarRespostaAtual = useCallback(async () => {
     if (!perguntaAtualData) return;
 
-    try {
-      const dadosResposta = prepararDadosResposta(
-        perguntaAtualData,
-        resposta,
-        frequencia,
-        intensidade
+    if (perguntaChHistoriaIndisponivel(perguntaAtualData)) {
+      throw new Error(
+        'Não foi possível salvar: a história social desta pergunta não carregou. Tente recarregar.',
       );
-      const response = await salvarResposta(dadosResposta);
-      
-      // Atualizar estado local imediatamente após salvar
-      if (response?.resposta) {
-        atualizarRespostaSalva(response.resposta);
-      }
-    } catch (err) {
-      console.error('Erro ao salvar resposta:', err);
-      throw err; // Re-throw para que o erro seja tratado pelo chamador
     }
-  }, [perguntaAtualData, resposta, frequencia, intensidade, prepararDadosResposta, salvarResposta, atualizarRespostaSalva]);
 
-  // Função para avançar e salvar antes
+    const dadosResposta = prepararDadosResposta(
+      perguntaAtualData,
+      resposta,
+      frequencia,
+      intensidade,
+    );
+    const response = await salvarResposta(dadosResposta);
+
+    if (response?.resposta) {
+      atualizarRespostaSalva(response.resposta);
+    }
+  }, [
+    perguntaAtualData,
+    resposta,
+    frequencia,
+    intensidade,
+    prepararDadosResposta,
+    salvarResposta,
+    atualizarRespostaSalva,
+  ]);
+
   const avancarPergunta = useCallback(async () => {
     try {
-      await salvarRespostaAtual();
-      
-      // Se for a última pergunta, navega para o SWOT
+      if (!perguntaChHistoriaIndisponivel(perguntaAtualData)) {
+        await salvarRespostaAtual();
+      }
+
       if (perguntaAtualIndex >= totalPerguntas - 1) {
+        const dadosAtuais = prepararDadosResposta(
+          perguntaAtualData,
+          resposta,
+          frequencia,
+          intensidade,
+        );
+        const key = `${dadosAtuais.tipo}-${dadosAtuais.perguntaId}`;
+        const respostasAtualizadas = {
+          ...respostasSalvas,
+          [key]: { ...respostasSalvas[key], ...dadosAtuais },
+        };
+
+        if (!questionarioEstaCompleto(perguntas, respostasAtualizadas)) {
+          alert('Ainda há perguntas incompletas. Revise suas respostas antes de finalizar.');
+          return;
+        }
+
         navigate('/resultados');
       } else {
         avancarPerguntaOriginal();
       }
     } catch (err) {
       console.error('Erro ao salvar antes de avançar:', err);
-      alert('Erro ao salvar resposta. Por favor, tente novamente.');
+      alert(extrairErroApi(err));
     }
-  }, [salvarRespostaAtual, avancarPerguntaOriginal, perguntaAtualIndex, totalPerguntas, navigate]);
-
-  // Função para salvar e fechar
-  const salvarEFechar = useCallback(async () => {
-    try {
-      await salvarRespostaAtual();
-      navigate('/');
-    } catch (err) {
-      console.error('Erro ao salvar antes de fechar:', err);
-      // Ainda assim navega, mas mostra erro
-      alert('Erro ao salvar. Suas respostas podem não ter sido salvas.');
-    }
-  }, [salvarRespostaAtual, navigate]);
-
-  const desabilitado = estaDesabilitado(
+  }, [
+    salvarRespostaAtual,
+    avancarPerguntaOriginal,
     perguntaAtualIndex,
     totalPerguntas,
     perguntaAtualData,
     resposta,
     frequencia,
     intensidade,
-    perguntaTemIntensidade
-  );
+    prepararDadosResposta,
+    respostasSalvas,
+    perguntas,
+    navigate,
+  ]);
 
-  // Verificar se o questionário já foi finalizado e redirecionar para o SWOT
-  useEffect(() => {
-    // Só verifica após carregar perguntas e respostas
-    if (!loading && !loadingRespostas && perguntas.length > 0) {
-      const completo = questionarioEstaCompleto(perguntas, respostasSalvas);
-      if (completo) {
-        navigate('/resultados');
+  const salvarEFechar = useCallback(async () => {
+    try {
+      if (!perguntaChHistoriaIndisponivel(perguntaAtualData)) {
+        await salvarRespostaAtual();
       }
+      navigate('/');
+    } catch (err) {
+      console.error('Erro ao salvar antes de fechar:', err);
+      alert(extrairErroApi(err));
     }
-  }, [loading, loadingRespostas, perguntas, respostasSalvas, navigate]);
+  }, [salvarRespostaAtual, navigate, perguntaAtualData]);
 
-  // Loading state
-  if (loading) {
+  const handleRecarregarHistoria = useCallback(async () => {
+    setRecarregandoHistoria(true);
+    try {
+      await recarregar();
+    } catch (err) {
+      alert(extrairErroApi(err));
+    } finally {
+      setRecarregandoHistoria(false);
+    }
+  }, [recarregar]);
+
+  const handleRecarregarPerguntas = useCallback(async () => {
+    setRecarregando(true);
+    try {
+      await recarregar();
+      reposicionar();
+    } catch (err) {
+      alert(extrairErroApi(err));
+    } finally {
+      setRecarregando(false);
+    }
+  }, [recarregar, reposicionar]);
+
+  const handleRecarregarRespostas = useCallback(async () => {
+    setRecarregando(true);
+    try {
+      await recarregarRespostas();
+    } catch (err) {
+      alert(extrairErroApi(err));
+    } finally {
+      setRecarregando(false);
+    }
+  }, [recarregarRespostas]);
+
+  const desabilitadoAvancar =
+    estaDesabilitado(
+      perguntaAtualData,
+      resposta,
+      frequencia,
+      intensidade,
+    ) || salvando;
+
+  const posicaoRespondivel = indiceRespondivelAtual(perguntas, perguntaAtualIndex);
+
+  if (carregando) {
     return (
       <div className="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen mt-5 rounded-2xl shadow-2xl pb-12 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 text-violet-600 animate-spin" />
-          <p className="text-gray-700 text-lg">Carregando perguntas...</p>
+          <p className="text-gray-700 text-lg">Carregando questionário...</p>
         </div>
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen mt-5 rounded-2xl shadow-2xl pb-12 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 px-6">
-          <p className="text-red-600 text-lg text-center">{error}</p>
-          <button 
-            onClick={() => navigate('/')}
-            className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-2 rounded-lg"
-          >
-            Voltar
-          </button>
+        <div className="flex flex-col items-center gap-4 px-6 max-w-md text-center">
+          <AlertCircle className="w-12 h-12 text-red-600" />
+          <p className="text-red-600 text-lg">{error}</p>
+          <p className="text-sm text-gray-600">
+            Não foi possível carregar as perguntas. Verifique sua conexão e tente novamente.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleRecarregarPerguntas}
+              disabled={recarregando}
+              className="px-6 py-3 rounded-xl bg-violet-700 text-white font-semibold hover:bg-violet-800 disabled:opacity-60 transition-colors"
+            >
+              {recarregando ? 'Recarregando…' : 'Tentar novamente'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="px-6 py-3 rounded-xl bg-gray-500 text-white font-semibold hover:bg-gray-600 transition-colors"
+            >
+              Voltar
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Se não houver perguntas
+  if (errorRespostas) {
+    return (
+      <div className="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen mt-5 rounded-2xl shadow-2xl pb-12 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 px-6 max-w-md text-center">
+          <AlertCircle className="w-12 h-12 text-red-600" />
+          <p className="text-red-600 text-lg">{errorRespostas}</p>
+          <p className="text-sm text-gray-600">
+            Não foi possível carregar suas respostas salvas. Tente novamente.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleRecarregarRespostas}
+              disabled={recarregando}
+              className="px-6 py-3 rounded-xl bg-violet-700 text-white font-semibold hover:bg-violet-800 disabled:opacity-60 transition-colors"
+            >
+              {recarregando ? 'Recarregando…' : 'Tentar novamente'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="px-6 py-3 rounded-xl bg-gray-500 text-white font-semibold hover:bg-gray-600 transition-colors"
+            >
+              Voltar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (perguntas.length === 0) {
     return (
       <div className="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen mt-5 rounded-2xl shadow-2xl pb-12 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 px-6">
           <p className="text-gray-700 text-lg text-center">Nenhuma pergunta encontrada.</p>
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-2 rounded-lg"
           >
@@ -159,37 +283,61 @@ function Questionario() {
     <div className="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen mt-5 rounded-2xl shadow-2xl pb-12">
       <div className="pt-8 pb-6 px-6">
         <div className="text-gray-900 font-bold text-3xl sm:text-4xl text-center mb-4">QUESTIONÁRIO</div>
-        
-        <ProgressBar 
-          perguntaAtual={perguntaAtual} 
-          totalPerguntas={totalPerguntas} 
+
+        <ProgressBar
+          perguntaAtual={posicaoRespondivel}
+          totalRespondiveis={totalRespondiveis}
+          completadas={respostasCompletas}
         />
       </div>
-      
+
       <div className="flex flex-col px-6 sm:px-10 md:px-16 lg:px-20 xl:px-32 gap-8 max-w-4xl xl:max-w-5xl mx-auto">
-        {perguntaAtualData && (
+        {historiaIndisponivel && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-800">História social indisponível</p>
+                <p className="text-sm text-red-700 mt-1">
+                  Não foi possível carregar o conteúdo desta pergunta. Você pode pular para a
+                  próxima ou tentar recarregar.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleRecarregarHistoria}
+              disabled={recarregandoHistoria}
+              className="shrink-0 px-5 py-2.5 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors"
+            >
+              {recarregandoHistoria ? 'Recarregando…' : 'Tentar novamente'}
+            </button>
+          </div>
+        )}
+
+        {perguntaAtualData && !historiaIndisponivel && (
           <>
-            {/* Renderizar CartPerguntaSH para perguntas do tipo SH */}
             {perguntaAtualData.tipo === 'SH' && (
               <CartPerguntaSH
                 key={perguntaAtualData.id || perguntaAtualIndex}
                 pergunta={perguntaAtualData.pergunta}
+                perguntaId={perguntaAtualData.id}
                 resposta={resposta}
-                onRespostaChange={setResposta}
+                onRespostaChange={handleRespostaChange}
                 mostrarFrequencia={true}
                 frequencia={frequencia}
-                onFrequenciaChange={setFrequencia}
-                mostrarIntensidade={true}
+                onFrequenciaChange={handleFrequenciaChange}
+                mostrarIntensidade={perguntaTemIntensidade}
                 intensidade={intensidade}
                 onIntensidadeChange={setIntensidade}
                 exemplo={perguntaAtualData.explicacao || null}
               />
             )}
-            
-            {/* Renderizar CardPerguntaCH para perguntas do tipo CH */}
+
             {perguntaAtualData.tipo === 'CH' && (
               <CardPerguntaCH
                 key={perguntaAtualData.id || perguntaAtualIndex}
+                perguntaId={perguntaAtualData.id}
                 introducao={perguntaAtualData.introducao}
                 titulo={perguntaAtualData.titulo}
                 personagem={perguntaAtualData.personagem}
@@ -197,11 +345,11 @@ function Questionario() {
                 historia={perguntaAtualData.historiaTexto}
                 questionamento={perguntaAtualData.questionamento}
                 resposta={resposta}
-                onRespostaChange={setResposta}
+                onRespostaChange={handleRespostaChange}
                 mostrarFrequencia={true}
                 frequencia={frequencia}
-                onFrequenciaChange={setFrequencia}
-                mostrarIntensidade={true}
+                onFrequenciaChange={handleFrequenciaChange}
+                mostrarIntensidade={perguntaTemIntensidade}
                 intensidade={intensidade}
                 onIntensidadeChange={setIntensidade}
                 perguntaIntensidade={perguntaAtualData.perguntaIntensidade}
@@ -211,11 +359,11 @@ function Questionario() {
               />
             )}
 
-            {/* Renderizar CardOportunidadeFraquezas para perguntas do tipo FO */}
             {perguntaAtualData.tipo === 'FO' && (
               <CardOportunidadeFraquezas
                 key={perguntaAtualData.id || perguntaAtualIndex}
                 pergunta={perguntaAtualData.pergunta}
+                perguntaId={perguntaAtualData.id}
                 explicacao={perguntaAtualData.explicacao || null}
                 resposta={resposta}
                 onRespostaChange={setResposta}
@@ -224,11 +372,11 @@ function Questionario() {
               />
             )}
 
-            {/* Renderizar CardForcas para perguntas do tipo F */}
             {perguntaAtualData.tipo === 'F' && (
               <CardForcas
                 key={perguntaAtualData.id || perguntaAtualIndex}
                 pergunta={perguntaAtualData.pergunta}
+                perguntaId={perguntaAtualData.id}
                 exemplo={perguntaAtualData.exemplo || null}
                 resposta={resposta}
                 onRespostaChange={setResposta}
@@ -239,25 +387,23 @@ function Questionario() {
           </>
         )}
 
-        {/* Botões de navegação */}
         <BotoesNavegacao
           perguntaAtualIndex={perguntaAtualIndex}
           totalPerguntas={perguntas.length}
-          desabilitado={desabilitado || salvando}
+          desabilitadoAvancar={desabilitadoAvancar}
+          desabilitadoSalvarFechar={salvando}
           onVoltar={() => navigate('/')}
           onAnterior={voltarPergunta}
           onSalvarFechar={salvarEFechar}
           onAvançar={avancarPergunta}
         />
-        
+
         {salvando && (
-          <div className="text-center text-sm text-gray-600">
-            Salvando...
-          </div>
+          <div className="text-center text-sm text-gray-600">Salvando...</div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default Questionario
+export default Questionario;

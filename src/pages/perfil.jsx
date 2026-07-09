@@ -85,6 +85,11 @@ function Perfil() {
       return;
     }
 
+    if (editData.nomeCompleto.trim().length < 3) {
+      setError('O nome deve ter pelo menos 3 caracteres');
+      return;
+    }
+
     setIsSaving(true);
 
     try {

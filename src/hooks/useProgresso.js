@@ -1,68 +1,72 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
-
-async function fetchTotalPerguntas() {
-  const [sh, ch, fo, f] = await Promise.all([
-    api.get('/fraquezas-ameacas-sh',    { params: { page: 1, limit: 500 } }),
-    api.get('/fraquezas-ameacas-ch',    { params: { page: 1, limit: 500 } }),
-    api.get('/fraquezas-oportunidades', { params: { page: 1, limit: 500 } }),
-    api.get('/forcas',                  { params: { page: 1, limit: 500 } }),
-  ]);
-  return (
-    (sh.data?.registros?.length  ?? 0) +
-    (ch.data?.registros?.length  ?? 0) +
-    (fo.data?.registros?.length  ?? 0) +
-    (f.data?.registros?.length   ?? 0)
-  );
-}
+import { useState, useEffect, useCallback } from 'react';
+import { fetchPerguntasCached, fetchRespostasCached } from '../utils/questionarioCache';
+import { contarRespostasCompletas, questionarioEstaCompleto, contarPerguntasRespondiveis } from '../utils/questionarioValidation';
+import { extrairErroApi } from '../utils/api-errors';
+import { QUESTIONARIO_SYNC_KEY } from '../utils/auth-events';
 
 /**
  * Retorna o estado de progresso do questionário do usuário logado.
  *
  * status:
- *   'nao_iniciado'  → 0 respostas
- *   'em_andamento'  → 1..total-1 respostas
- *   'concluido'     → >= total respostas
+ *   null            → ainda não carregou ou falhou ao carregar
+ *   'nao_iniciado'  → 0 respostas completas
+ *   'em_andamento'  → 1..total-1 respostas completas
+ *   'concluido'     → todas as perguntas com resposta válida
  */
 export function useProgresso() {
-  const [status, setStatus] = useState('nao_iniciado');
+  const [status, setStatus] = useState(null);
   const [porcentagem, setPorcentagem] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const carregar = useCallback(async ({ force = false } = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    async function load() {
-      try {
-        const [total, respostasResp] = await Promise.all([
-          fetchTotalPerguntas(),
-          api.get('/questionario-resposta'),
-        ]);
+      const [perguntas, respostasMap] = await Promise.all([
+        fetchPerguntasCached({ force }),
+        fetchRespostasCached({ force }),
+      ]);
 
-        if (cancelled) return;
+      const total = contarPerguntasRespondiveis(perguntas);
+      const respondidas = contarRespostasCompletas(perguntas, respostasMap);
+      const pct = total > 0 ? Math.min(100, Math.round((respondidas / total) * 100)) : 0;
 
-        const respondidas = respostasResp.data?.respostas?.length ?? 0;
-        const pct = total > 0 ? Math.min(100, Math.round((respondidas / total) * 100)) : 0;
+      setPorcentagem(pct);
 
-        setPorcentagem(pct);
-
-        if (respondidas === 0) {
-          setStatus('nao_iniciado');
-        } else if (pct >= 100) {
-          setStatus('concluido');
-        } else {
-          setStatus('em_andamento');
-        }
-      } catch {
-        // Em caso de erro mantém 'nao_iniciado'
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (respondidas === 0) {
+        setStatus('nao_iniciado');
+      } else if (questionarioEstaCompleto(perguntas, respostasMap)) {
+        setStatus('concluido');
+      } else {
+        setStatus('em_andamento');
       }
+    } catch (err) {
+      console.error('Erro ao carregar progresso:', err);
+      setError(extrairErroApi(err, 'Não foi possível carregar o progresso do questionário.'));
+      setStatus(null);
+    } finally {
+      setLoading(false);
     }
-
-    load();
-    return () => { cancelled = true; };
   }, []);
 
-  return { status, porcentagem, loading };
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  useEffect(() => {
+    const onStorage = (event) => {
+      if (event.key === QUESTIONARIO_SYNC_KEY) {
+        carregar({ force: true });
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [carregar]);
+
+  const recarregar = useCallback(() => carregar({ force: true }), [carregar]);
+
+  return { status, porcentagem, loading, error, recarregar };
 }

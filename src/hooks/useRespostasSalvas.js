@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useState, useEffect, useCallback } from 'react';
+import { fetchRespostasCached, invalidateRespostasCache } from '../utils/questionarioCache';
+import { extrairErroApi } from '../utils/api-errors';
+import { notifyQuestionarioUpdated } from '../utils/auth-events';
 
 /**
  * Hook para carregar respostas já salvas do questionário
@@ -9,81 +11,47 @@ export function useRespostasSalvas(tipo) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const carregarRespostas = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const params = tipo ? { tipo } : {};
-        const response = await api.get('/questionario-resposta', { params });
-        
-        // Converter array de respostas em objeto indexado por perguntaId
-        const respostasMap = {};
-        response.data.respostas.forEach(resposta => {
-          const key = `${resposta.tipo}-${resposta.perguntaId}`;
-          respostasMap[key] = resposta;
-        });
-        
-        setRespostasSalvas(respostasMap);
-      } catch (err) {
-        console.error('Erro ao carregar respostas salvas:', err);
-        setError(err.response?.data?.error || 'Erro ao carregar respostas');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    carregarRespostas();
-  }, [tipo]);
-
-  /**
-   * Obter resposta salva para uma pergunta específica
-   */
-  const getRespostaSalva = (perguntaId, tipo) => {
-    const key = `${tipo}-${perguntaId}`;
-    return respostasSalvas[key] || null;
-  };
-
-  /**
-   * Atualizar uma resposta salva no estado local (sem recarregar da API)
-   */
-  const atualizarRespostaSalva = (resposta) => {
-    if (!resposta || !resposta.perguntaId || !resposta.tipo) return;
-    
-    const key = `${resposta.tipo}-${resposta.perguntaId}`;
-    setRespostasSalvas(prev => ({
-      ...prev,
-      [key]: resposta
-    }));
-  };
-
-  /**
-   * Recarregar respostas da API
-   */
-  const recarregarRespostas = async () => {
+  const carregarRespostas = useCallback(async ({ force = false } = {}) => {
     try {
       setLoading(true);
       setError(null);
-      
-      const params = tipo ? { tipo } : {};
-      const response = await api.get('/questionario-resposta', { params });
-      
-      // Converter array de respostas em objeto indexado por perguntaId
-      const respostasMap = {};
-      response.data.respostas.forEach(resposta => {
-        const key = `${resposta.tipo}-${resposta.perguntaId}`;
-        respostasMap[key] = resposta;
-      });
-      
+
+      const respostasMap = await fetchRespostasCached({ tipo, force });
       setRespostasSalvas(respostasMap);
+      return respostasMap;
     } catch (err) {
-      console.error('Erro ao recarregar respostas salvas:', err);
-      setError(err.response?.data?.error || 'Erro ao recarregar respostas');
+      console.error('Erro ao carregar respostas salvas:', err);
+      setError(extrairErroApi(err, 'Erro ao carregar respostas'));
     } finally {
       setLoading(false);
     }
+  }, [tipo]);
+
+  useEffect(() => {
+    carregarRespostas();
+  }, [carregarRespostas]);
+
+  const getRespostaSalva = (perguntaId, tipoPergunta) => {
+    const key = `${tipoPergunta}-${perguntaId}`;
+    return respostasSalvas[key] || null;
   };
+
+  const atualizarRespostaSalva = (resposta) => {
+    if (!resposta || !resposta.perguntaId || !resposta.tipo) return;
+
+    const key = `${resposta.tipo}-${resposta.perguntaId}`;
+    setRespostasSalvas((prev) => ({
+      ...prev,
+      [key]: resposta,
+    }));
+    invalidateRespostasCache();
+    notifyQuestionarioUpdated();
+  };
+
+  const recarregarRespostas = useCallback(
+    () => carregarRespostas({ force: true }),
+    [carregarRespostas],
+  );
 
   return {
     respostasSalvas,
@@ -94,4 +62,3 @@ export function useRespostasSalvas(tipo) {
     error,
   };
 }
-

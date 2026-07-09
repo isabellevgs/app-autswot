@@ -1,6 +1,9 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { AUTH_SESSION_EXPIRED } from "../utils/auth-events";
 import PrivateRoute from "./PrivateRoute";
+import QuestionarioCompletoGuard from "./QuestionarioCompletoGuard";
 
 // Importar páginas
 import Home from "../pages/home";
@@ -13,11 +16,30 @@ import Conteudo from "../pages/conteudo";
 import PostDetail from "../pages/post-detail";
 import Perfil from "../pages/perfil";
 
+const SessionExpiredHandler = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  useEffect(() => {
+    const handler = () => {
+      sessionStorage.setItem('autswot:session-message', 'Sua sessão expirou. Faça login novamente.');
+      logout();
+      navigate('/login', { replace: true });
+    };
+    window.addEventListener(AUTH_SESSION_EXPIRED, handler);
+    return () => window.removeEventListener(AUTH_SESSION_EXPIRED, handler);
+  }, [logout, navigate]);
+
+  return null;
+};
+
 const AppRoutes = () => {
   const { signed } = useAuth();
 
   return (
-    <Routes>
+    <>
+      <SessionExpiredHandler />
+      <Routes>
       {/* Rotas públicas - Autenticação */}
       <Route 
         path="/login" 
@@ -49,7 +71,9 @@ const AppRoutes = () => {
         path="/resultados"
         element={
           <PrivateRoute>
-            <Swot />
+            <QuestionarioCompletoGuard>
+              <Swot />
+            </QuestionarioCompletoGuard>
           </PrivateRoute>
         }
       />
@@ -89,6 +113,7 @@ const AppRoutes = () => {
       {/* Rota 404 - Página não encontrada */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 };
 

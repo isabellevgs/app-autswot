@@ -24,7 +24,7 @@ const BOTAO_CONFIG = {
 
 function Home() {
   const navigate = useNavigate();
-  const { status, loading } = useProgresso();
+  const { status, porcentagem, loading, error, recarregar } = useProgresso();
 
   const p = 'font-serif text-gray-900 text-base sm:text-lg leading-relaxed text-justify';
 
@@ -129,15 +129,32 @@ function Home() {
         </div>
       </div>
 
-      <div className="flex justify-center pb-12">
-        <Button
-          onClick={() => navigate(BOTAO_CONFIG[status].rota)}
-          disabled={loading}
-          size="lg"
-          className="hover:scale-105 active:scale-95"
-        >
-          {loading ? 'Carregando…' : BOTAO_CONFIG[status].label}
-        </Button>
+      <div className="flex flex-col items-center justify-center pb-12 gap-3">
+        {!loading && status === 'em_andamento' && porcentagem > 0 && (
+          <p className="text-sm text-gray-600">Progresso do questionário: {porcentagem}%</p>
+        )}
+        {error && (
+          <p className="text-sm text-red-600 text-center max-w-md px-4">{error}</p>
+        )}
+        {error ? (
+          <Button
+            onClick={recarregar}
+            disabled={loading}
+            size="lg"
+            className="hover:scale-105 active:scale-95"
+          >
+            {loading ? 'Carregando…' : 'Tentar novamente'}
+          </Button>
+        ) : (
+          <Button
+            onClick={() => navigate(BOTAO_CONFIG[status]?.rota || '/questionario')}
+            disabled={loading || !status}
+            size="lg"
+            className="hover:scale-105 active:scale-95"
+          >
+            {loading ? 'Carregando…' : (BOTAO_CONFIG[status]?.label || 'Carregando…')}
+          </Button>
+        )}
       </div>
     </PageContainer>
   );

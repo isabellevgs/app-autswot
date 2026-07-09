@@ -5,6 +5,7 @@ import RespostaSimNao from '../shared/RespostaSimNao';
 
 function CardPerguntaCH({ 
   // Dados da história social
+  perguntaId = '',
   introducao = null,
   titulo = null,
   personagem = null,
@@ -94,6 +95,7 @@ function CardPerguntaCH({
           frequencia={frequencia}
           onFrequenciaChange={onFrequenciaChange}
           tipo="CH"
+          perguntaId={perguntaId}
         />
       )}
 
