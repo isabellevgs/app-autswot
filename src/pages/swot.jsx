@@ -10,23 +10,12 @@ import SwotGrid from '../components/swot/SwotGrid';
 import { gerarSwotPdf } from '../lib/swot-pdf';
 import { coletarDadosTracosParaPdf } from '../lib/coletar-dados-tracos-pdf';
 import {
-  SECAO_POR_QUADRANTE,
   TRACOS_PARA_DESBLOQUEAR_PROXIMO,
-  tracosNecessariosParaDesbloquearProximo,
 } from '../constants/swotQuadrantes';
-import { reflexoesCompletasParaPdf } from '../utils/swotProgresso';
+import { metaEnvioQuadrante, reflexoesCompletasParaPdf } from '../utils/swotProgresso';
 
 const introP =
   'font-serif text-gray-900 text-base sm:text-lg leading-relaxed text-justify';
-
-function necessariosParaProximo(quadrante, dadosSwot, progresso) {
-  if (progresso?.[quadrante]?.necessarios != null) {
-    return progresso[quadrante].necessarios;
-  }
-  const secao = SECAO_POR_QUADRANTE[quadrante];
-  const total = dadosSwot?.[secao]?.items?.length ?? 0;
-  return tracosNecessariosParaDesbloquearProximo(quadrante, total);
-}
 
 function Swot() {
   const { user } = useAuth();
@@ -41,9 +30,9 @@ function Swot() {
 
   const pdfDisponivel = totalItens > 0 && reflexoesCompletasParaPdf(progresso);
 
-  const reqAmeaca = necessariosParaProximo('ameaca', dadosSwot, progresso);
-  const reqFraqueza = necessariosParaProximo('fraqueza', dadosSwot, progresso);
-  const reqOportunidade = necessariosParaProximo('oportunidade', dadosSwot, progresso);
+  const reqAmeaca = metaEnvioQuadrante('ameaca', dadosSwot, progresso);
+  const reqFraqueza = metaEnvioQuadrante('fraqueza', dadosSwot, progresso);
+  const reqOportunidade = metaEnvioQuadrante('oportunidade', dadosSwot, progresso);
 
   const handleBaixarPdf = async () => {
     if (!pdfDisponivel || gerandoPdf) return;

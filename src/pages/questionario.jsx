@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useCallback, useState } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import CartPerguntaSH from '../components/questionario/cartPerguntaSH';
@@ -15,6 +15,7 @@ import {
   estaDesabilitado,
   questionarioEstaCompleto,
   perguntaChHistoriaIndisponivel,
+  contarPerguntasRespondiveis,
   contarRespostasCompletas,
   indiceRespondivelAtual,
 } from '../utils/questionarioValidation';
@@ -277,6 +278,10 @@ function Questionario() {
         </div>
       </div>
     );
+  }
+
+  if (questionarioEstaCompleto(perguntas, respostasSalvas)) {
+    return <Navigate to="/resultados" replace />;
   }
 
   return (

@@ -1,4 +1,4 @@
-import { Check, Hourglass } from 'lucide-react';
+import { Check, Clock, Hourglass } from 'lucide-react';
 import { chaveReflexaoTraco } from '../../utils/reflexaoTracoStatus';
 
 const CONFIG = {
@@ -12,12 +12,15 @@ const CONFIG = {
     label: 'Salvo sem enviar (rascunho)',
     className: 'text-amber-200',
   },
+  pendente: {
+    Icon: Clock,
+    label: 'Ainda não há reflexão salva',
+    className: 'text-white/60',
+  },
 };
 
-function TracoReflexaoStatus({ status, className = '' }) {
-  if (!status || !CONFIG[status]) return null;
-
-  const { Icon, label, className: iconClass } = CONFIG[status];
+function TracoReflexaoStatus({ status = 'pendente', className = '' }) {
+  const { Icon, label, className: iconClass } = CONFIG[status] ?? CONFIG.pendente;
 
   return (
     <span
@@ -31,8 +34,9 @@ function TracoReflexaoStatus({ status, className = '' }) {
 }
 
 export function obterStatusTraco(item, statusPorTraco) {
-  if (!item || !statusPorTraco) return null;
-  return statusPorTraco[chaveReflexaoTraco(item)] ?? null;
+  if (!item) return null;
+  if (!statusPorTraco) return 'pendente';
+  return statusPorTraco[chaveReflexaoTraco(item)] ?? 'pendente';
 }
 
 export default TracoReflexaoStatus;

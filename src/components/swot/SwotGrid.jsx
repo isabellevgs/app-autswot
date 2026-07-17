@@ -8,6 +8,7 @@ import {
   quadranteEstaDesbloqueado,
   tracosFaltandoParaDesbloquear,
 } from '../../constants/swotQuadrantes';
+import { metaEnvioQuadrante } from '../../utils/swotProgresso';
 import SwotTracoModal from './SwotTracoModal';
 
 function totaisPorQuadrante(dadosSwot) {
@@ -21,12 +22,19 @@ function totaisPorQuadrante(dadosSwot) {
 
 function textoProgressoQuadrante(quadrante, progresso, dadosSwot) {
   const secao = SECAO_POR_QUADRANTE[quadrante];
-  const total = progresso?.[quadrante]?.totalTracos ?? dadosSwot?.[secao]?.items?.length ?? 0;
+  const totalTracos = progresso?.[quadrante]?.totalTracos ?? dadosSwot?.[secao]?.items?.length ?? 0;
   const concluidos = progresso?.[quadrante]?.concluidos ?? 0;
 
-  if (total <= 0) return null;
-  if (quadrante === 'forca') return `${total} traço${total !== 1 ? 's' : ''}`;
-  return `${concluidos}/${total} enviado${concluidos !== 1 ? 's' : ''}`;
+  if (totalTracos <= 0) return null;
+
+  if (quadrante === 'forca') {
+    return `${totalTracos} traço${totalTracos !== 1 ? 's' : ''}`;
+  }
+
+  const meta = metaEnvioQuadrante(quadrante, dadosSwot, progresso);
+  if (meta <= 0) return null;
+
+  return `${concluidos}/${meta} enviado${concluidos !== 1 ? 's' : ''}`;
 }
 
 function calcularStatus(secao, progresso, dadosSwot, progressoIndisponivel) {

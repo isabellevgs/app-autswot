@@ -1,6 +1,20 @@
 import { quadranteTemExercicios } from '../constants/swotQuadranteExercicios.jsx';
+import {
+  SECAO_POR_QUADRANTE,
+  tracosNecessariosParaDesbloquearProximo,
+} from '../constants/swotQuadrantes';
 
 const QUADRANTES_COM_EXERCICIOS = ['ameaca', 'fraqueza', 'oportunidade'];
+
+/** Meta de envios no quadrante para desbloquear o próximo (5 / 3 / 2, ou menos se houver poucos traços). */
+export function metaEnvioQuadrante(quadrante, dadosSwot, progresso) {
+  if (progresso?.[quadrante]?.necessarios != null) {
+    return progresso[quadrante].necessarios;
+  }
+  const secao = SECAO_POR_QUADRANTE[quadrante];
+  const total = dadosSwot?.[secao]?.items?.length ?? 0;
+  return tracosNecessariosParaDesbloquearProximo(quadrante, total);
+}
 
 function totalTracos(progresso) {
   if (!progresso) return 0;
