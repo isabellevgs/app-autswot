@@ -202,7 +202,7 @@ function ConteudoAmeacaFraqueza({ detalhe, secoes, tracoSeed, exemplosVisivel })
         </section>
       )}
 
-      {exemplos.length > 0 && exemplosVisivel && (
+      {exemplos.length > 0 && (
         <section id={secoes.exemplos} className="space-y-3 rounded-xl border border-violet-100 bg-violet-50/40 p-4 scroll-mt-4">
           <h4 className="font-semibold text-gray-900">Exemplos práticos</h4>
           <ListaComVerMais
