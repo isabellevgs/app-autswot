@@ -571,7 +571,7 @@ function SwotTracoModal({ isOpen, onClose, onSalvo, tracoInfo }) {
                   </div>
                 )}
 
-                {isF && (
+                {isF && quadrante === 'forca' && (
                   <ConteudoForca detalhe={detalhe} />
                 )}
 
