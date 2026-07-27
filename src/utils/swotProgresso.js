@@ -36,6 +36,7 @@ function totalTracos(progresso) {
  * se houver forças, o quadrante deve estar desbloqueado.
  */
 export function reflexoesCompletasParaPdf(progresso) {  
+  console.log(progresso);
   if (!progresso || totalTracos(progresso) === 0) return false;
 
   for (const quadrante of QUADRANTES_COM_EXERCICIOS) {
