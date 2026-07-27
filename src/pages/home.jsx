@@ -19,7 +19,7 @@ function NumberedBlock({ numberLabel, children }) {
 const BOTAO_CONFIG = {
   nao_iniciado: { label: 'Iniciar questionário',   rota: '/questionario' },
   em_andamento: { label: 'Continuar questionário', rota: '/questionario' },
-  concluido:    { label: 'Ver meu SWOT',           rota: '/resultados'   },
+  concluido:    { label: 'Ver minha SWOT',           rota: '/resultados'   },
 };
 
 function Home() {
