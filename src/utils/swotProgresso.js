@@ -42,6 +42,9 @@ export function reflexoesCompletasParaPdf(progresso) {
   for (const quadrante of QUADRANTES_COM_EXERCICIOS) {
     if (!quadranteTemExercicios(quadrante)) continue;
 
+    const total = progresso[quadrante]?.totalTracos ?? 0;
+    if (total <= 0) continue;
+    
     const concluidos = progresso[quadrante]?.concluidos ?? 0;
     if (concluidos < quadrantesExerMinimos.get(quadrante)) return false;
   }
