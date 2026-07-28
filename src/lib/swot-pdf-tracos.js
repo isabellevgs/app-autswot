@@ -292,8 +292,9 @@ function renderTracoConteudo(doc, traco, y) {
 
   const intro = introExercicios(quadrante);
   const perguntas = perguntasDoQuadrantePdf(quadrante);
-
-  if (perguntas.length && intro) {
+  const algumaRespondida = perguntas.some(({ id }) => respostas[id]?.trim());
+  
+  if (perguntas.length && intro && algumaRespondida) {
     y = writeHeading(doc, TITULO_EXERCICIOS, y);
     y = writeParagraph(doc, intro, y);
 
