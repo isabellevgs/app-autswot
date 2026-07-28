@@ -45,7 +45,7 @@ export function reflexoesCompletasParaPdf(progresso) {
     if (total <= 0) continue;
     
     const concluidos = progresso[quadrante]?.concluidos ?? 0;
-    if (concluidos < quadrantesExerMinimos.get(quadrante)) return false;
+    if (concluidos < quadrantesExerMinimos.get(quadrante) && concluidos < total) return false;
   }
 
   const totalForcas = progresso.forca?.totalTracos ?? 0;
