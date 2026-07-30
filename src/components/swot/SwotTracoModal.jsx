@@ -258,6 +258,17 @@ function ConteudoFo({ detalhe, quadrante, secoes, tipoTraco }) {
         </section>
       )}
 
+      {mostrarOportunidade && isForca && transformarEmForca.length > 0 && (
+        <section className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+          <TituloSecao>{TITULOS_FORCA.transformarEmForca}</TituloSecao>
+          <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
+            {transformarEmForca.map((texto, i) => (
+              <li key={i}>{texto}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+      
       {mostrarOportunidade && exemplosOportunidade.length > 0 && (
         <section className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
           <TituloSecao>{tituloExemplosOportunidade}</TituloSecao>
@@ -269,16 +280,7 @@ function ConteudoFo({ detalhe, quadrante, secoes, tipoTraco }) {
         </section>
       )}
 
-      {mostrarOportunidade && isForca && transformarEmForca.length > 0 && (
-        <section className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
-          <TituloSecao>{TITULOS_FORCA.transformarEmForca}</TituloSecao>
-          <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
-            {transformarEmForca.map((texto, i) => (
-              <li key={i}>{texto}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+      
 
       {mostrarFraqueza && fraquezaOuAmeaca.length > 0 && (
         <section className="space-y-3">
