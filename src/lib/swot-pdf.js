@@ -16,14 +16,14 @@ function renderCapa(doc) {
   const imgProps = doc.getImageProperties(capaLogoBase64)
   const aspectRatio = imgProps.height / imgProps.width
 
-  const imagemLargura = 150 
+  const imagemLargura = 125 
   const imagemAltura = imagemLargura * aspectRatio 
 
   const x = (PAGE_W - imagemLargura) / 2
   let y = 70
 
   doc.addImage(capaLogoBase64, 'PNG', x, y, imagemLargura, imagemAltura)
-  y += imagemAltura + 24
+  y += imagemAltura + 10
 
   doc.setFont('times', 'bold')
   doc.setFontSize(SZ.docTitle + 6)
