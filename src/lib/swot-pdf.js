@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf'
 import { renderTracosNoPdf, TYPE, splitLines, textBlockHeight, ensureSpace, drawLinesLeft, SECOES } from './swot-pdf-tracos.js'
+import capaLogoBase64 from '../../assets/AutSwotCapaPDF.png?inline'
 
 const PAGE_W = TYPE.margin * 2 + TYPE.contentWidth
 const { margin: MARGIN, contentWidth: CONTENT_W, sizes: SZ, colors: C, spacing: SP } = TYPE
@@ -11,6 +12,21 @@ function itemLabel(item) {
   return String(item)
 }
 
+function renderCapa(doc) {
+  const imagemLargura = 100
+  const imagemAltura = 100
+  const x = (PAGE_W - imagemLargura) / 2
+  let y = 70
+
+  doc.addImage(capaLogoBase64, 'PNG', x, y, imagemLargura, imagemAltura)
+  y += imagemAltura + 24
+
+  doc.setFont('times', 'bold')
+  doc.setFontSize(SZ.docTitle + 6)
+  doc.setTextColor(21, 96, 130)
+  doc.text('Relatório de perfil autístico', PAGE_W / 2, y, { align: 'center' })
+}
+
 /**
  * Gera e faz download do PDF SWOT de um usuário
  */
@@ -18,6 +34,10 @@ export function gerarSwotPdf(personName, swotData, tracosDetalhados = []) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const date = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
+  // -- Capa ------------------------------------------------------------------
+  renderCapa(doc)
+  doc.addPage()
+  
   let y = MARGIN
 
   // ── Cabeçalho do documento ────────────────────────────────────────────────
