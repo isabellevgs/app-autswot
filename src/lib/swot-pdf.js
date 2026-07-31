@@ -13,8 +13,12 @@ function itemLabel(item) {
 }
 
 function renderCapa(doc) {
-  const imagemLargura = 100
-  const imagemAltura = 100
+  const imgProps = doc.getImageProperties(capaLogoBase64)
+  const aspectRatio = imgProps.height / imgProps.width
+
+  const imagemLargura = 100 
+  const imagemAltura = imagemLargura * aspectRatio 
+
   const x = (PAGE_W - imagemLargura) / 2
   let y = 70
 
@@ -23,7 +27,7 @@ function renderCapa(doc) {
 
   doc.setFont('times', 'bold')
   doc.setFontSize(SZ.docTitle + 6)
-  doc.setTextColor(21, 96, 130)
+  doc.setTextColor(21, 96, 130) 
   doc.text('Relatório de perfil autístico', PAGE_W / 2, y, { align: 'center' })
 }
 
