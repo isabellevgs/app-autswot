@@ -16,7 +16,7 @@ function renderCapa(doc) {
   const imgProps = doc.getImageProperties(capaLogoBase64)
   const aspectRatio = imgProps.height / imgProps.width
 
-  const imagemLargura = 100 
+  const imagemLargura = 150 
   const imagemAltura = imagemLargura * aspectRatio 
 
   const x = (PAGE_W - imagemLargura) / 2
