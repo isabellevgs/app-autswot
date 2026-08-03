@@ -106,9 +106,8 @@ export function montarExemplosOportunidade(detalhe) {
 }
 
 export function montarExemplosPraticosForca(detalhe) {
-  return montarItensPorCategoria(
-    detalhe,
-    CATEGORIAS_EXEMPLOS_PRATICOS_FORCA,
-    [],
-  )
+  if (!detalhe) return []
+  return CATEGORIAS_EXEMPLOS_PRATICOS_FORCA
+    .map(({ field }) => (detalhe[field] ?? '').trim())
+    .filter(Boolean)
 }
