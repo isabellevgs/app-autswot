@@ -125,3 +125,21 @@ export const REGRAS_DESBLOQUEIO = [
     quadranteAnteriorTitulo: 'Oportunidades',
   },
 ];
+
+export const QUADRANTES_COM_EXERCICIOS = ['ameaca', 'fraqueza', 'oportunidade'];
+export const quadrantesExerMinimos = new Map([
+  ['ameaca', 5],
+  ['fraqueza', 3],
+  ['oportunidade', 2]
+]);
+
+export function fezExerciciosMinimos(progresso){
+  for (const quadrante of QUADRANTES_COM_EXERCICIOS) {
+    const total = progresso[quadrante]?.totalTracos ?? 0;
+    if (total <= 0) continue;
+    
+    const concluidos = progresso[quadrante]?.concluidos ?? 0;
+    if (concluidos < quadrantesExerMinimos.get(quadrante) && concluidos < total) return false;
+  }
+  return true;
+}
