@@ -135,11 +135,15 @@ export const quadrantesExerMinimos = new Map([
 
 export function fezExerciciosMinimos(progresso){
   for (const quadrante of QUADRANTES_COM_EXERCICIOS) {
-    const total = progresso[quadrante]?.totalTracos ?? 0;
-    if (total <= 0) continue;
-    
-    const concluidos = progresso[quadrante]?.concluidos ?? 0;
-    if (concluidos < quadrantesExerMinimos.get(quadrante) && concluidos < total) return false;
+    if !fezExerciciosMinimosQuad(progresso, quadrante) return false;
   }
   return true;
+}
+
+export function fezExerciciosMinimosQuad(progresso, quadrante){
+  const total = progresso[quadrante]?.totalTracos ?? 0;
+  if (total <= 0) return true;
+  
+  const concluidos = progresso[quadrante]?.concluidos ?? 0;
+  return (concluidos >= quadrantesExerMinimos.get(quadrante) || concluidos == total);
 }
