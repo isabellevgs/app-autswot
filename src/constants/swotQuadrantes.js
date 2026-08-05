@@ -135,7 +135,7 @@ export const quadrantesExerMinimos = new Map([
 
 export function fezExerciciosMinimos(progresso){
   for (const quadrante of QUADRANTES_COM_EXERCICIOS) {
-    if !fezExerciciosMinimosQuad(progresso, quadrante) return false;
+    if (!fezExerciciosMinimosQuad(progresso, quadrante)) return false;
   }
   return true;
 }
