@@ -32,7 +32,7 @@ function totalTracos(progresso) {
 export function reflexoesCompletasParaPdf(progresso) {  
   if (!progresso || totalTracos(progresso) === 0) return false;
 
-  if !fezExerciciosMinimos(progresso) return false;
+  if (!fezExerciciosMinimos(progresso)) return false;
 
   const totalForcas = progresso.forca?.totalTracos ?? 0;
   if (totalForcas > 0 && !progresso.forca?.desbloqueado) return false;
