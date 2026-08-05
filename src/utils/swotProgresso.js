@@ -2,15 +2,9 @@ import { quadranteTemExercicios } from '../constants/swotQuadranteExercicios.jsx
 import {
   SECAO_POR_QUADRANTE,
   tracosNecessariosParaDesbloquearProximo,
+  QUADRANTES_COM_EXERCICIOS,
+  fezExerciciosMinimos,
 } from '../constants/swotQuadrantes';
-
-const QUADRANTES_COM_EXERCICIOS = ['ameaca', 'fraqueza', 'oportunidade'];
-const quadrantesExerMinimos = new Map([
-  ['ameaca', 5],
-  ['fraqueza', 3],
-  ['oportunidade', 2]
-]);
-
 
 /** Meta de envios no quadrante para desbloquear o próximo (5 / 3 / 2, ou menos se houver poucos traços). */
 export function metaEnvioQuadrante(quadrante, dadosSwot, progresso) {
@@ -38,15 +32,7 @@ function totalTracos(progresso) {
 export function reflexoesCompletasParaPdf(progresso) {  
   if (!progresso || totalTracos(progresso) === 0) return false;
 
-  for (const quadrante of QUADRANTES_COM_EXERCICIOS) {
-    if (!quadranteTemExercicios(quadrante)) continue;
-
-    const total = progresso[quadrante]?.totalTracos ?? 0;
-    if (total <= 0) continue;
-    
-    const concluidos = progresso[quadrante]?.concluidos ?? 0;
-    if (concluidos < quadrantesExerMinimos.get(quadrante) && concluidos < total) return false;
-  }
+  if !fezExerciciosMinimos(progresso) return false;
 
   const totalForcas = progresso.forca?.totalTracos ?? 0;
   if (totalForcas > 0 && !progresso.forca?.desbloqueado) return false;
