@@ -248,6 +248,9 @@ function ConteudoFo({ detalhe, quadrante, secoes, tipoTraco }) {
   const transformarEmOportunidade = detalhe.transformarEmOportunidade || [];
   const dicas              = !isForca ? (detalhe.dicas || []) : [];
   const exemplosPraticos   = detalhe.exemplos || [];
+  const mostrarExemplosLegado =
+    exemplosPraticos.length > 0 &&
+    (!isForca || !mostrarOportunidade || !exemplosOportunidade.length);
 
   return (
     <>
@@ -325,7 +328,7 @@ function ConteudoFo({ detalhe, quadrante, secoes, tipoTraco }) {
         </section>
       )}
 
-      {((isForca && mostrarExemplosForca) || !isForca) && exemplosPraticos.length > 0 && (
+      {((isForca && mostrarExemplosForca) || !isForca) && mostrarExemplosLegado && (
         <section id={secoes.exemplos} className="space-y-3 rounded-xl border border-violet-100 bg-violet-50/40 p-4 scroll-mt-4">
           <TituloSecao>{isForca ? TITULOS_FORCA.exemplosPraticos : TITULOS_FO.exemplos}</TituloSecao>
           <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base">
