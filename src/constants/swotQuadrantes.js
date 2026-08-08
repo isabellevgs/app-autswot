@@ -73,10 +73,11 @@ export function quadranteEstaDesbloqueado(
   if (!DESBLOQUEIO_SEQUENCIAL_ATIVO) return true;
   const anterior = QUADRANTE_ANTERIOR[quadrante];
   if (!anterior) return true;
-  const totalAnterior = totalTracosPorQuadrante[anterior] ?? 0;
+  const totalAnterior = totalTracosPorQuadrante[anterior] ?? 0;  
   const necessarios = tracosNecessariosParaDesbloquear(quadrante, totalAnterior);
   if (necessarios === 0) return true;
-  return (concluidosPorQuadrante[anterior] ?? 0) >= necessarios;
+  let concluidos = concluidosPorQuadrante[anterior] ?? 0;
+  return (concluidos >= necessarios || concluidos == totalAnterior);
 }
 
 export function tracosFaltandoParaDesbloquear(
@@ -89,7 +90,10 @@ export function tracosFaltandoParaDesbloquear(
   const totalAnterior = totalTracosPorQuadrante[anterior] ?? 0;
   const necessarios = tracosNecessariosParaDesbloquear(quadrante, totalAnterior);
   if (necessarios === 0) return 0;
-  return Math.max(0, necessarios - (concluidosPorQuadrante[anterior] ?? 0));
+  let concluidos = concluidosPorQuadrante[anterior] ?? 0;
+  if (concluidos == totalAnterior) return 0;
+  
+  return Math.max(0, necessarios - concluidos);
 }
 
 export const REGRAS_DESBLOQUEIO = [
