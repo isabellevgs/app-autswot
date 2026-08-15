@@ -18,7 +18,7 @@ export const ROTULOS_VER_MAIS = {
 export const QUESTOES_AMEACA_FRAQUEZA = [
   {
     id: 'q1',
-    min: 40,
+    min: 25,
     texto: (
       <>
         Escreva abaixo <strong>quando e como</strong> foi a <strong>última vez</strong> que você se lembra deste{' '}
@@ -29,7 +29,7 @@ export const QUESTOES_AMEACA_FRAQUEZA = [
   },
   {
     id: 'q2',
-    min: 40,
+    min: 25,
     texto: (
       <>
         Escreva abaixo as <strong>consequências negativas ou positivas</strong> da situação citada e como você se{' '}
@@ -42,7 +42,7 @@ export const QUESTOES_AMEACA_FRAQUEZA = [
   },
   {
     id: 'q3',
-    min: 50,
+    min: 25,
     hasSubContent: true,
     texto: (
       <>
@@ -54,7 +54,7 @@ export const QUESTOES_AMEACA_FRAQUEZA = [
   },
   {
     id: 'q4',
-    min: 45,
+    min: 25,
     hasSubContent: true,
     texto: (
       <>
@@ -68,7 +68,7 @@ export const QUESTOES_AMEACA_FRAQUEZA = [
   },
   {
     id: 'q5',
-    min: 50,
+    min: 25,
     hasSubContent: true,
     texto: (
       <>
