@@ -3,7 +3,7 @@
 export const QUESTOES_OPORTUNIDADE = [
   {
     id: 'q1',
-    min: 40,
+    min: 25,
     texto: (
       <>
         Escreva abaixo <strong>quando e como</strong> foi a <strong>última vez</strong> que você se lembra deste traço
@@ -14,7 +14,7 @@ export const QUESTOES_OPORTUNIDADE = [
   },
   {
     id: 'q2',
-    min: 40,
+    min: 25,
     texto: (
       <>
         Escreva abaixo as <strong>consequências negativas ou positivas</strong> da situação citada e como você se sentiu
@@ -25,7 +25,7 @@ export const QUESTOES_OPORTUNIDADE = [
   },
   {
     id: 'q3',
-    min: 45,
+    min: 25,
     texto: (
       <>
         Se esse traço for trabalhado, que <strong>benefícios</strong> ele poderia trazer para sua vida? Pense no potencial
@@ -36,7 +36,7 @@ export const QUESTOES_OPORTUNIDADE = [
   },
   {
     id: 'q4',
-    min: 45,
+    min: 25,
     texto: (
       <>
         Que tipo de <strong>apoio, estrutura ou suporte</strong> você precisaria para transformar esse traço em algo
@@ -47,7 +47,7 @@ export const QUESTOES_OPORTUNIDADE = [
   },
   {
     id: 'q5',
-    min: 50,
+    min: 25,
     hasSubContent: true,
     texto: (
       <>
