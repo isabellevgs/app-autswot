@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { buscarTcle } from '../../utils/tcle';
+import { buscarTcle } from '../../utils/appDataUtils.js';
 
 function TermosModal({ isOpen, onClose }) {
   const [tcle, setTcle] = useState(null);
