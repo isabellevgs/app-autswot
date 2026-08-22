@@ -102,6 +102,7 @@ const initialForm = {
   contouSuicidioOuBarreiras: '',
   probabilidadeSuicidioFuturoExplicacao: '',
   aceitouTermos: false,
+  aceitouTermoUso: false,
 };
 
 function Cadastrar() {
@@ -110,6 +111,7 @@ function Cadastrar() {
   const [formData, setFormData] = useState(initialForm);
   const [erro, setErro] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tipoTermo, setTipoTermo] = useState('tcle');
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -202,7 +204,12 @@ function Cadastrar() {
     }
 
     if (!formData.aceitouTermos) {
-      setErro('Você precisa aceitar os termos de uso para criar uma conta.');
+      setErro('Você precisa aceitar o Termo de Consentimento Livre e Esclarecido para criar uma conta.');
+      return;
+    }
+    
+    if (!formData.aceitouTermoUso) {
+      setErro('Você precisa aceitar o Termo de Uso para criar uma conta.');
       return;
     }
 
@@ -496,28 +503,62 @@ function Cadastrar() {
           />
         </section>
 
-        <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            id="termos"
-            checked={formData.aceitouTermos}
-            onChange={(e) => handleChange('aceitouTermos', e.target.checked)}
-            className="mt-1 w-4 h-4 text-violet-700 border-gray-300 rounded focus:ring-violet-500 cursor-pointer flex-shrink-0"
-            required
-          />
-          <label htmlFor="termos" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsModalOpen(true);
-              }}
-              className="text-violet-700 hover:text-violet-800 font-semibold underline text-left"
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="termos"
+              checked={formData.aceitouTermos}
+              onChange={(e) => handleChange('aceitouTermos', e.target.checked)}
+              className="mt-1 w-4 h-4 text-violet-700 border-gray-300 rounded focus:ring-violet-500 cursor-pointer flex-shrink-0"
+              required
+            />
+        
+            <label
+              htmlFor="termos"
+              className="text-sm text-gray-700 cursor-pointer leading-relaxed"
             >
-              Li e aceito os termos de consentimento livre e esclarecido
-            </button>
-          </label>
-        </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setTipoTermo('tcle');
+                  setIsModalOpen(true);
+                }}
+                className="text-violet-700 hover:text-violet-800 font-semibold underline text-left"
+              >
+                Li e aceito os termos de consentimento livre e esclarecido
+              </button>
+            </label>
+          </div>
+        
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="termoUso"
+              checked={formData.aceitouTermoUso}
+              onChange={(e) => handleChange('aceitouTermoUso', e.target.checked)}
+              className="mt-1 w-4 h-4 text-violet-700 border-gray-300 rounded focus:ring-violet-500 cursor-pointer flex-shrink-0"
+              required
+            />
+          
+            <label
+              htmlFor="termoUso"
+              className="text-sm text-gray-700 cursor-pointer leading-relaxed"
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setTipoTermo('termoUso');
+                  setIsModalOpen(true);
+                }}
+                className="text-violet-700 hover:text-violet-800 font-semibold underline text-left"
+              >
+                Li e aceito o Termo de Uso
+              </button>
+            </label>
+          </div>
 
         <Button type="submit" fullWidth size="lg" className="uppercase mt-2">
           Criar Conta
@@ -534,7 +575,11 @@ function Cadastrar() {
         </Link>
       </div>
 
-      <TermosModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <TermosModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        tipoTermo={tipoTermo}
+      />
     </AuthLayout>
   );
 }
