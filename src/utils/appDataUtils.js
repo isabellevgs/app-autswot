@@ -24,3 +24,14 @@ export async function atualizarTcle(tcle) {
     };
   }
 }
+export async function buscarAcessoLiberado() {
+  try {
+    const res = await api.get('/app-data/acesso-liberado');
+    return { acessoLiberado: res.data.acessoLiberado, erro: null };
+  } catch (err) {
+    return {
+      acessoLiberado: null,
+      erro: extrairErroApi(err, 'Erro ao verificar liberação de acesso.'),
+    };
+  }
+}
