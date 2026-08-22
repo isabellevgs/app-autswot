@@ -35,3 +35,15 @@ export async function buscarAcessoLiberado() {
     };
   }
 }
+
+export async function buscarTermoUso() {
+  try {
+    const res = await api.get('/app-data/termoUso');
+    return { termoUso: res.data.termoUso, erro: null };
+  } catch (err) {
+    return {
+      termoUso: null,
+      erro: extrairErroApi(err, 'Erro ao carregar o termo de uso.'),
+    };
+  }
+}
