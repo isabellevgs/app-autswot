@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { buscarAcessoLiberado } from '@/utils/appDataUtils'
+import AcessoBloqueadoModal from '@/components/AcessoBloqueadoModal'
 
-function RequireAcessoLiberado({ children, redirectTo = '/' }) {
+function RequireAcessoLiberado({ children }) {
   const [status, setStatus] = useState('loading') // 'loading' | 'liberado' | 'bloqueado' | 'erro'
 
   useEffect(() => {
@@ -31,7 +31,7 @@ function RequireAcessoLiberado({ children, redirectTo = '/' }) {
   }
 
   if (status === 'bloqueado') {
-    return <Navigate to={redirectTo} replace />
+    return <AcessoBloqueadoModal isOpen />
   }
 
   if (status === 'erro') {
