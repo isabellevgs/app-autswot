@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { buscarTcle } from '../../utils/appDataUtils.js';
+import { buscarTcle, buscarTermoUso } from '../../utils/appDataUtils.js';
 
-function TermosModal({ isOpen, onClose }) {
-  const [tcle, setTcle] = useState(null);
+function TermosModal({ isOpen, onClose, tipoTermo = 'tcle' }) {
+  const [textoTermo, setTextoTermo] = useState(null);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
 
@@ -11,13 +11,30 @@ function TermosModal({ isOpen, onClose }) {
 
     setCarregando(true);
     setErro(null);
+    setTextoTermo(null);
 
-    buscarTcle().then(({ tcle, erro }) => {
-      setTcle(tcle);
-      setErro(erro);
+    const buscar = tipoTermo === 'termoUso'
+      ? buscarTermoUso
+      : buscarTcle;
+
+    buscar().then((resultado) => {
+      const texto = tipoTermo === 'termoUso'
+        ? resultado.termoUso
+        : resultado.tcle;
+
+      setTextoTermo(texto);
+      setErro(resultado.erro);
       setCarregando(false);
     });
-  }, [isOpen]);
+  }, [isOpen, tipoTermo]);
+
+  const titulo = tipoTermo === 'termoUso'
+    ? 'TERMO DE USO'
+    : 'TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO (TCLE)';
+
+  const mensagemVazio = tipoTermo === 'termoUso'
+    ? 'Termo de uso não disponível no momento.'
+    : 'Termo de consentimento não disponível no momento.';
 
   if (!isOpen) return null;
 
@@ -34,8 +51,9 @@ function TermosModal({ isOpen, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">
-            TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO (TCLE)
+            {titulo}
           </h2>
+
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
@@ -66,18 +84,20 @@ function TermosModal({ isOpen, onClose }) {
           )}
 
           {!carregando && erro && (
-            <p className="text-sm text-red-600 text-center py-8">{erro}</p>
+            <p className="text-sm text-red-600 text-center py-8">
+              {erro}
+            </p>
           )}
 
-          {!carregando && !erro && tcle && (
+          {!carregando && !erro && textoTermo && (
             <div className="prose prose-gray max-w-none space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
-              {tcle}
+              {textoTermo}
             </div>
           )}
 
-          {!carregando && !erro && !tcle && (
+          {!carregando && !erro && !textoTermo && (
             <p className="text-sm text-gray-500 text-center py-8">
-              Termo de consentimento não disponível no momento.
+              {mensagemVazio}
             </p>
           )}
         </div>
