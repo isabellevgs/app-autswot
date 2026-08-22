@@ -4,6 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { AUTH_SESSION_EXPIRED } from "../utils/auth-events";
 import PrivateRoute from "./PrivateRoute";
 import QuestionarioCompletoGuard from "./QuestionarioCompletoGuard";
+import RequireAcessoLiberado from "./RequireAcessoLiberado";
 
 // Importar páginas
 import Home from "../pages/home";
@@ -63,7 +64,9 @@ const AppRoutes = () => {
         path="/questionario"
         element={
           <PrivateRoute>
-            <Questionario />
+            <RequireAcessoLiberado>
+              <Questionario />
+            </RequireAcessoLiberado>
           </PrivateRoute>
         }
       />
@@ -72,7 +75,9 @@ const AppRoutes = () => {
         element={
           <PrivateRoute>
             <QuestionarioCompletoGuard>
-              <Swot />
+              <RequireAcessoLiberado>
+                <Swot />
+              </RequireAcessoLiberado>  
             </QuestionarioCompletoGuard>
           </PrivateRoute>
         }
@@ -81,7 +86,9 @@ const AppRoutes = () => {
         path="/diario"
         element={
           <PrivateRoute>
-            <Diario />
+            <RequireAcessoLiberado>
+              <Diario />
+            </RequireAcessoLiberado>
           </PrivateRoute>
         }
       />
