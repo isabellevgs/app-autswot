@@ -559,6 +559,7 @@ function Cadastrar() {
               </button>
             </label>
           </div>
+        </div>
 
         <Button type="submit" fullWidth size="lg" className="uppercase mt-2">
           Criar Conta
