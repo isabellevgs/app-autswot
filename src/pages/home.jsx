@@ -155,6 +155,7 @@ function Home() {
             {loading ? 'Carregando…' : (BOTAO_CONFIG[status]?.label || 'Carregando…')}
           </Button>
         )}
+        <p className="text-sm text-violet-800">Desative o tradutor do navegador para evitar erros de grafia</p>
       </div>
     </PageContainer>
   );
