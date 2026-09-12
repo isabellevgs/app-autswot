@@ -5,6 +5,7 @@ import { AUTH_SESSION_EXPIRED } from "../utils/auth-events";
 import PrivateRoute from "./PrivateRoute";
 import QuestionarioCompletoGuard from "./QuestionarioCompletoGuard";
 import RequireAcessoLiberado from "./RequireAcessoLiberado";
+import RequireSwotLiberado from "./RequireSwotLiberado";
 
 // Importar páginas
 import Home from "../pages/home";
@@ -76,7 +77,9 @@ const AppRoutes = () => {
           <PrivateRoute>
             <QuestionarioCompletoGuard>
               <RequireAcessoLiberado>
-                <Swot />
+                <RequireSwotLiberado>
+                  <Swot />
+                </RequireSwotLiberado>
               </RequireAcessoLiberado>  
             </QuestionarioCompletoGuard>
           </PrivateRoute>
