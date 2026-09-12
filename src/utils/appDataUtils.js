@@ -47,3 +47,15 @@ export async function buscarTermoUso() {
     };
   }
 }
+
+export async function buscarSwotLiberado() {
+  try {
+    const res = await api.get('/app-data/swot-liberado');
+    return { swotLiberado: res.data.swotLiberado, erro: null };
+  } catch (err) {
+    return {
+      swotLiberado: null,
+      erro: extrairErroApi(err, 'Erro ao verificar liberação do SWOT.'),
+    };
+  }
+}
